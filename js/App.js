@@ -1,100 +1,75 @@
 
 import React, { Component } from 'react';
-import { StyleSheet } from 'react-native';
+import { addNavigationHelpers } from 'react-navigation';
+import { AsyncStorage, BackAndroid } from 'react-native';
+import { combineReducers, createStore, applyMiddleware, compose } from 'redux';
+import { connect, Provider } from 'react-redux';
 
-import { Container, Content, Text, View } from 'native-base';
-import Modal from 'react-native-modalbox';
+import devTools from 'remote-redux-devtools';
+import thunk from 'redux-thunk';
+import { persistStore, autoRehydrate } from 'redux-persist';
 
+import { ThemeProvider } from 'styled-components';
+
+import bridgeChooser from './reducers/bridgeChooser';
+
+import promise from './promise';
 import AppNavigator from './AppNavigator';
-import ProgressBar from './components/loaders/ProgressBar';
+import SplashScreen from './components/SplashScreen';
+import baseTheme from './themes/base-theme.js';
 
-import theme from './themes/base-theme';
+const navReducer = (state, action) => {
+  const newState = AppNavigator.router.getStateForAction(action, state);
+  return newState || state;
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    width: null,
-    height: null,
-  },
-  modal: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modal1: {
-    height: 300,
-  },
+const appReducer = combineReducers({
+  bridges: bridgeChooser,
+  navigation: navReducer,
 });
 
-class App extends Component {
+const AppWithNavigationState = connect(state => ({
+  navigation: state.navigation,
+}))((props) => (
+  <AppNavigator navigation={addNavigationHelpers({
+    dispatch: props.dispatch,
+    state: props.navigation,
+  })} />
+));
 
+
+const enhancer = compose(
+  applyMiddleware(thunk, promise),
+  devTools({
+    name: 'nativestarterkit', realtime: true,
+  }),
+  autoRehydrate(),
+);
+
+const store = createStore(appReducer, enhancer);
+
+class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      showDownloadingModal: false,
-      showInstalling: false,
-      downloadProgress: 0,
+      loading: true,
     };
+    persistStore(store, { storage: AsyncStorage }, () => {
+      this.setState({
+        loading: false,
+      });
+    });
   }
-
-  componentDidMount() { }
-
   render() {
-    if (this.state.showDownloadingModal) {
-      return (
-        <Container theme={theme} style={{ backgroundColor: theme.defaultBackgroundColor }}>
-          <Content style={styles.container}>
-            <Modal
-              style={[styles.modal, styles.modal1]}
-              backdrop={false}
-              ref={(c) => { this._modal = c; }}
-              swipeToClose={false}
-            >
-              <View
-                style={{ flex: 1, alignSelf: 'stretch', justifyContent: 'center', padding: 20 }}
-              >
-                {this.state.showInstalling ?
-                  <Text
-                    style={{
-                      color: theme.brandPrimary,
-                      textAlign: 'center',
-                      marginBottom: 15,
-                      fontSize: 15,
-                    }}
-                  >
-                    Installing update...
-                  </Text> :
-                  <View
-                    style={{
-                      flex: 1,
-                      alignSelf: 'stretch',
-                      justifyContent: 'center',
-                      padding: 20,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: theme.brandPrimary,
-                        textAlign: 'center',
-                        marginBottom: 15,
-                        fontSize: 15,
-                      }}
-                    >
-                      Downloading update... {`${parseInt(this.state.downloadProgress, 10)} %`}
-                    </Text>
-                    <ProgressBar
-                      color="theme.brandPrimary"
-                      progress={parseInt(this.state.downloadProgress, 10)}
-                    />
-                  </View>
-                }
-              </View>
-            </Modal>
-          </Content>
-        </Container>
-      );
-    }
-
-    return <AppNavigator />;
+    return (
+        <Provider store={store}>
+          <ThemeProvider theme={baseTheme}>
+            <SplashScreen loading={this.state.loading}>
+              <AppWithNavigationState />
+            </SplashScreen>
+          </ThemeProvider>
+        </Provider>
+    );
   }
 }
 

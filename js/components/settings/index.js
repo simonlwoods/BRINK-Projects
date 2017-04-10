@@ -2,15 +2,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import styled from 'styled-components/native';
-import { actions } from 'react-native-navigation-redux-helpers';
 
-import { Button, Container, Header, Content, Text, Icon } from './../../components';
+import { Button, Container, Header, Content, Text, Icon, CircledIcon } from './../../components';
 import BridgeChooser from './../BridgeChooser';
-import { openDrawer } from './../../actions/drawer';
-
-const {
-  popRoute,
-} = actions;
 
 const SettingsContainer = styled(Container)`
   background-color: ${props => props.theme.bgColor};
@@ -19,14 +13,14 @@ const SettingsContainer = styled(Container)`
 const Settings = props => (
   <SettingsContainer>
     <Header>
-      <Button transparent onPress={() => props.popRoute(props.navigation.key)} style={{ position: 'absolute', top: 0, left: 0 }}>
-        <Icon name="chevron-with-circle-left" />
+      <Button transparent onPress={() => props.navigation.goBack()} style={{ position: 'absolute', top: 0, left: 0 }}>
+        <CircledIcon name="chevron-left" />
       </Button>
-      <Button transparent onPress={props.openDrawer}>
-        <Icon name="menu" />
+      <Button transparent onPress={() => props.navigation.navigate('DrawerOpen')}>
+        <CircledIcon name="menu" />
       </Button>
 
-      <Text>{(props.name) ? props.name : 'Settings'}</Text>
+      <Text>{'Settings'}</Text>
     </Header>
 
     <Content>
@@ -36,20 +30,15 @@ const Settings = props => (
 );
 
 Settings.propTypes = {
-  name: React.PropTypes.string,
-  openDrawer: React.PropTypes.func,
-  popRoute: React.PropTypes.func,
+  navigation: React.PropTypes.shape({
+    navigate: React.PropTypes.func
+  })
 };
 
 const mapDispatchToProps = {
-  openDrawer,
-  popRoute,
 }
 
 const mapStateToProps = state => ({
-  name: state.user.name,
-  list: state.list.list,
-  navigation: state.cardNavigation,
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Settings);

@@ -1,7 +1,7 @@
 
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { List, ListItem } from 'native-base';
+import { ListView } from 'react-native';
 import styled from 'styled-components/native';
 
 import { Icon, StatusMessage, Text, View } from './../../components';
@@ -48,7 +48,7 @@ class BridgeChooser extends Component {
     removeUser: React.PropTypes.func,
     selectBridge: React.PropTypes.func,
     addBridge: React.PropTypes.func,
-    // clearBridges: React.PropTypes.func,
+    clearBridges: React.PropTypes.func,
     bridges: React.PropTypes.shape({
       list: React.PropTypes.array,
       selectedId: React.PropTypes.string,
@@ -58,11 +58,13 @@ class BridgeChooser extends Component {
 
   constructor(props) {
     super(props);
+    const dataSource = 
     this.state = {
       searching: false,
       pairing: false,
       error: undefined,
       success: undefined,
+      dataSource: (new ListView.DataSource({rowHasChanged: (r1, r2) => r1.id !== r2.id})),
     };
   }
 
@@ -83,6 +85,14 @@ class BridgeChooser extends Component {
           error: error.message,
         });
       });
+  }
+
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.bridges.list !== this.props.bridges.list) {
+      this.setState({
+        dataSource: this.state.dataSource.cloneWithRows(nextProps.bridges.list)
+      })
+    }
   }
 
   selectBridge(bridge) {
@@ -126,17 +136,17 @@ class BridgeChooser extends Component {
     return (
       <View>
         <Searching searching={this.state.searching} />
-        <List
-          dataArray={this.props.bridges.list}
+        <ListView
+          dataSource={this.state.dataSource}
           renderRow={bridge => (
-            <View key={bridge.id} button>
-              <ListItem onPress={() => this.selectBridge(bridge)}>
+            <View button>
+              <View onPress={() => this.selectBridge(bridge)}>
                 { this.props.bridges.selectedId === bridge.id ?
                   <BridgeIcon name="check" />
                   : null }
                 <Text>{ bridge.name }</Text>
                 <Text note>{ bridge.ip }</Text>
-              </ListItem>
+              </View>
               { this.state.pairing === bridge.id ?
                 <Pairing onPress={() => this.pair(bridge)} />
                 : null }

@@ -4,12 +4,7 @@ import { Platform } from 'react-native';
 
 export default {
 
-  bgColor: '#000',
-
-  // Badge
-  badgeBg: '#ED1727',
-  badgeColor: '#fff',
-
+  bgColor: '#111',
 
   // Button
   btnFontFamily: (Platform.OS === 'ios') ? 'HelveticaNeue' : 'Roboto_medium',
@@ -70,15 +65,10 @@ export default {
   },
 
 
-  // Card
-  cardDefaultBg: '#000',
-
-
   // Check Box
   checkboxBgColor: '#039BE5',
   checkboxSize: 23,
   checkboxTickColor: '#fff',
-
 
   // Color
   brandPrimary: '#5067FF',
@@ -129,7 +119,7 @@ export default {
 
 
   // Icon
-  iconFamily: 'Ionicons',
+  iconFamily: 'Entypo',
   iconFontSize: (Platform.OS === 'ios') ? 30 : 28,
   iconMargin: 7,
   iconColor: '#fff',

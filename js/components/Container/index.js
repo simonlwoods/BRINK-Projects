@@ -1,6 +1,7 @@
 
 import _ from 'lodash';
 import React, { Component } from 'react';
+import { StatusBar } from 'react-native';
 import styled from 'styled-components/native';
 
 import { Header, Content, Footer, View } from './../../components';
@@ -56,6 +57,7 @@ export default class Container extends Component {
 
     return (
       <ContainerView {...this.props}>
+        <StatusBar hidden={true} />
 
         {this.renderHeader()}
 

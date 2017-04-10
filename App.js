@@ -1,3 +1,3 @@
-import setup from './js/setup';
+import App from './js/App';
 
-export default setup();
+export default App;
