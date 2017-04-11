@@ -1,7 +1,9 @@
 
+import Expo from 'expo';
+
 import React, { Component } from 'react';
 import { addNavigationHelpers } from 'react-navigation';
-import { AsyncStorage, BackAndroid } from 'react-native';
+import { AsyncStorage, BackAndroid, StatusBar } from 'react-native';
 import { combineReducers, createStore, applyMiddleware, compose } from 'redux';
 import { connect, Provider } from 'react-redux';
 
@@ -11,7 +13,8 @@ import { persistStore, autoRehydrate } from 'redux-persist';
 
 import { ThemeProvider } from 'styled-components';
 
-import bridgeChooser from './reducers/bridgeChooser';
+import bridgeList from './reducers/bridgeList';
+import bridge from './reducers/bridge';
 
 import promise from './promise';
 import AppNavigator from './AppNavigator';
@@ -24,7 +27,7 @@ const navReducer = (state, action) => {
 };
 
 const appReducer = combineReducers({
-  bridges: bridgeChooser,
+  bridges: combineReducers({ list: bridgeList, current: bridge }),
   navigation: navReducer,
 });
 
@@ -37,12 +40,8 @@ const AppWithNavigationState = connect(state => ({
   })} />
 ));
 
-
 const enhancer = compose(
   applyMiddleware(thunk, promise),
-  devTools({
-    name: 'nativestarterkit', realtime: true,
-  }),
   autoRehydrate(),
 );
 
@@ -55,9 +54,12 @@ class App extends React.Component {
       loading: true,
     };
     persistStore(store, { storage: AsyncStorage }, () => {
-      this.setState({
-        loading: false,
-      });
+      console.log(store.getState());
+      setTimeout(() => {
+        this.setState({
+          loading: false,
+        });
+      }, 500);
     });
   }
   render() {

@@ -5,7 +5,7 @@ import { View } from './../../components';
 
 const Content = styled(View)`
   flex: 1;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
 `;
 

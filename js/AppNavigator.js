@@ -1,15 +1,16 @@
 
 import { DrawerNavigator } from 'react-navigation';
 
-import Home from './components/home';
+import Home, { SetupOrHome } from './components/home';
 import Settings from './components/settings'
+import Setup from './components/Setup';
 
 const AppNavigator = DrawerNavigator({
   Home: {
-    screen: Home,
+    screen: Setup,
   },
   Settings: {
-    screen: Settings,
+    screen: Home,
   },
 }, {
   contentOptions: {

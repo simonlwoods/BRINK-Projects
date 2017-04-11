@@ -1,13 +1,24 @@
 
 import _ from 'lodash';
+import Expo from 'expo';
 import React, { Component } from 'react';
-import { StatusBar } from 'react-native';
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
 
 import { Header, Content, Footer, View } from './../../components';
 
+const { width, height } = Dimensions.get('window');
+
 const ContainerView = styled(View)`
   flex: 1;
+  z-index:0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: ${() => Dimensions.get('window').width};
+  height: ${() => Dimensions.get('window').height};
+  padding-top: ${Expo.Constants.statusBarHeight};
+  padding-bottom: ${Expo.Constants.statusBarHeight};
   background-color: ${props => props.theme.bgColor};
 `;
 
@@ -57,7 +68,6 @@ export default class Container extends Component {
 
     return (
       <ContainerView {...this.props}>
-        <StatusBar hidden={true} />
 
         {this.renderHeader()}
 

@@ -6,7 +6,6 @@ import { View } from './../../components';
 
 const HeaderView = styled(View)`
   align-items: center;
-  margin-top: 15;
 `;
 
 const Header = props => (

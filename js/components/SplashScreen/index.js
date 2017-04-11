@@ -1,24 +1,49 @@
 import React, { Component } from 'react';
-import { Dimensions } from 'react-native';
+import { Animated } from 'react-native';
 import styled from 'styled-components/native';
 
-import { View, Text } from './../../components';
+import { Container, Content, Text, View } from './../../components';
 
-const { width, height } = Dimensions.get('window');
-
-const Splash = styled.View`
-  position:absolute;
-  left: 0;
-  right: 0;
-  top:0;
-  height:${() => Dimensions.get('window').height}
-  background-color: ${props => props.theme.bgColor};
+const Brink = styled(Text)`
+  text-align:center;
+  font-size:20;
+  letter-spacing:2;
 `;
 
-const SplashScreen = props => (props.loading) ? (
-      <Splash>
-        <Text>{'Some Text'}</Text>
-      </Splash>
-    ) : props.children;
+class SplashScreen extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      show: true,
+      fadeOut: new Animated.Value(1),
+      fadeIn: new Animated.Value(0),
+    };
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.loading && !nextProps.loading) {
+      Animated.timing(this.state.fadeOut, {toValue: 0}).start(() => {
+        Animated.timing(this.state.fadeIn, {toValue: 1}).start(() => this.setState({ show: false }))
+      });
+    }
+  }
+
+  render() {
+    return <View style={{ flex: 1, backgroundColor: '#000' }}>
+      <Animated.View style={{ opacity: this.state.fadeIn }}>
+        { this.props.children }
+      </Animated.View>
+      {!this.state.show ? null : 
+        <Animated.View style={{ opacity: this.state.fadeOut }}>
+          <Container>
+            <Content>
+              <Brink>{'BRINK'}</Brink>
+            </Content>
+          </Container>
+        </Animated.View>
+      }
+    </View>
+  }
+}
 
 export default SplashScreen;

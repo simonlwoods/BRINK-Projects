@@ -1,11 +1,11 @@
 
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { ListView } from 'react-native';
+import { TouchableWithoutFeedback, ListView } from 'react-native';
 import styled from 'styled-components/native';
 
 import { Icon, StatusMessage, Text, View } from './../../components';
-import { addUser, removeUser, selectBridge, addBridge, clearBridges } from '../../actions/bridgeChooser';
+import { addUser, removeUser, selectBridge } from '../../actions/bridge';
 
 import Searching from './Searching';
 import Pairing from './Pairing';
@@ -13,20 +13,6 @@ import Pairing from './Pairing';
 const co = require('co');
 const huejay = require('huejay');
 
-const discover = callback => co(function* () { // eslint-disable-line
-  const bridges = yield huejay.discover();
-  for (const bridge of bridges) {
-    const client = new huejay.Client({
-      host: bridge.ip,
-    });
-    const details = yield client.bridge.get();
-    callback({
-      name: details.name,
-      ip: bridge.ip,
-      id: bridge.id,
-    });
-  }
-});
 
 const pair = bridge => co(function* () { // eslint-disable-line
   const client = new huejay.Client({ host: bridge.ip });
@@ -47,10 +33,7 @@ class BridgeChooser extends Component {
     addUser: React.PropTypes.func,
     removeUser: React.PropTypes.func,
     selectBridge: React.PropTypes.func,
-    addBridge: React.PropTypes.func,
-    clearBridges: React.PropTypes.func,
     bridges: React.PropTypes.shape({
-      list: React.PropTypes.array,
       selectedId: React.PropTypes.string,
       users: React.PropTypes.object,
     }),
@@ -64,6 +47,7 @@ class BridgeChooser extends Component {
       pairing: false,
       error: undefined,
       success: undefined,
+      bridges: [],
       dataSource: (new ListView.DataSource({rowHasChanged: (r1, r2) => r1.id !== r2.id})),
     };
   }
@@ -71,28 +55,42 @@ class BridgeChooser extends Component {
   componentWillMount() {
     this.setState({ searching: true });
 
-    discover(bridge => this.props.addBridge(bridge))
-      .then(() => {
-        this.setState({
+    const component = this;
+    huejay.discover().
+      then(bridges => {
+        const bridgeList = component.state.bridges.slice();
+
+        return co(function* () { // eslint-disable-line
+          for (const bridge of bridges) {
+            const client = new huejay.Client({
+              host: bridge.ip,
+            });
+            const details = yield client.bridge.get();
+            bridgeList.push({
+              name: details.name,
+              ip: bridge.ip,
+              id: bridge.id,
+            });
+            component.setState({
+              bridges: bridgeList,
+              dataSource: component.state.dataSource.cloneWithRows(bridgeList),
+            });
+          }
+        })
+      }).
+      then(() => {
+        component.setState({
           searching: undefined,
           error: undefined,
           success: 'Bridge search complete',
         });
       })
       .catch((error) => {
-        this.setState({
+        component.setState({
           searching: undefined,
           error: error.message,
         });
       });
-  }
-
-  componentWillReceiveProps (nextProps) {
-    if (nextProps.bridges.list !== this.props.bridges.list) {
-      this.setState({
-        dataSource: this.state.dataSource.cloneWithRows(nextProps.bridges.list)
-      })
-    }
   }
 
   selectBridge(bridge) {
@@ -139,18 +137,20 @@ class BridgeChooser extends Component {
         <ListView
           dataSource={this.state.dataSource}
           renderRow={bridge => (
-            <View button>
-              <View onPress={() => this.selectBridge(bridge)}>
-                { this.props.bridges.selectedId === bridge.id ?
-                  <BridgeIcon name="check" />
+            <TouchableWithoutFeedback onPress={() => this.selectBridge(bridge)}>
+              <View>
+                <View>
+                  { this.props.bridges.selectedId === bridge.id ?
+                    <BridgeIcon name="check" />
+                    : null }
+                  <Text>{ bridge.name }</Text>
+                  <Text note>{ bridge.ip }</Text>
+                </View>
+                { this.state.pairing === bridge.id ?
+                  <Pairing onPress={() => this.pair(bridge)} />
                   : null }
-                <Text>{ bridge.name }</Text>
-                <Text note>{ bridge.ip }</Text>
               </View>
-              { this.state.pairing === bridge.id ?
-                <Pairing onPress={() => this.pair(bridge)} />
-                : null }
-            </View>
+            </TouchableWithoutFeedback>
           )}
         />
         <StatusMessage type="success" status={this.state.success} />
@@ -164,8 +164,6 @@ const mapDispatchToProps = {
   addUser,
   removeUser,
   selectBridge,
-  addBridge,
-  clearBridges,
 };
 
 const mapStateToProps = state => ({
