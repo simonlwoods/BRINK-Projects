@@ -7,16 +7,15 @@ import { AsyncStorage, BackAndroid, StatusBar } from 'react-native';
 import { combineReducers, createStore, applyMiddleware, compose } from 'redux';
 import { connect, Provider } from 'react-redux';
 
-import devTools from 'remote-redux-devtools';
-import thunk from 'redux-thunk';
 import { persistStore, autoRehydrate } from 'redux-persist';
 
 import { ThemeProvider } from 'styled-components';
 
-import bridgeList from './reducers/bridgeList';
-import bridge from './reducers/bridge';
+import bridgeManager from './reducers/bridgeManager';
 
-import promise from './promise';
+import promiseMiddleware from './middleware/promise';
+import hueMiddleware from './middleware/hue';
+
 import AppNavigator from './AppNavigator';
 import SplashScreen from './components/SplashScreen';
 import baseTheme from './themes/base-theme.js';
@@ -27,7 +26,7 @@ const navReducer = (state, action) => {
 };
 
 const appReducer = combineReducers({
-  bridges: combineReducers({ list: bridgeList, current: bridge }),
+  bridges: bridgeManager,
   navigation: navReducer,
 });
 
@@ -41,7 +40,7 @@ const AppWithNavigationState = connect(state => ({
 ));
 
 const enhancer = compose(
-  applyMiddleware(thunk, promise),
+  applyMiddleware(hueMiddleware, promiseMiddleware),
   autoRehydrate(),
 );
 
@@ -55,6 +54,13 @@ class App extends React.Component {
     };
     persistStore(store, { storage: AsyncStorage }, () => {
       console.log(store.getState());
+      const bridge = store.getState().bridges.current;
+      
+      if (bridge.id) store.dispatch({ 
+        type: 'HUE_AUTHENTICATE',
+        bridge: store.getState().bridges.current,
+      });
+      
       setTimeout(() => {
         this.setState({
           loading: false,

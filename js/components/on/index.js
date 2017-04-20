@@ -27,6 +27,10 @@ class Home extends Component {
       }, ()=>{});
   }
 
+  huejayToggle() {
+    this.state.on ? this.huejayOff() : this.huejayOn();
+  }
+
   huejayOn() {
     this.client.lights.getAll().
       then(lights => {
@@ -38,12 +42,23 @@ class Home extends Component {
     this.setState({ on: true });
   }
 
+  huejayOff() {
+    this.client.lights.getAll().
+      then(lights => {
+        for (let l of lights) {
+          l.on = false;
+          this.client.lights.save(l);
+        }
+      }, ()=>{});
+    this.setState({ on: false });
+  }
+
   render() {
     return (
       <Container>
         <Content>
           <Text>Ready to be transported to a far away land?</Text>
-		  <Button style={{ width: 100 }} onPress={() => (this.huejayOn(), this.props.navigateNext())}>{ "ON" }</Button>
+          <Button style={{ width: 100 }} onPress={this.props.navigateNext}>{ this.state.on ? "OFF" : "ON" }</Button>
         </Content>
       </Container>
     );

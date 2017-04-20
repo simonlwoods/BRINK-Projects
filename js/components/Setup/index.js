@@ -6,13 +6,15 @@ import { connect } from 'react-redux';
 import Welcome from './../Welcome';
 import FindBridge from './../FindBridge';
 import Home from './../home';
+import TimelineScreen from './../TimelineScreen';
 
 import theme from './../../themes/base-theme.js';
 
 const mapDispatchToProps = { };
 
 const mapStateToProps = state => ({
-  bridge: state.bridges.current,
+  connected: state.bridges.state.connected,
+  searching: state.bridges.state.searching,
 });
 
 const FadeNavigator = config => connect(mapStateToProps, mapDispatchToProps)(
@@ -20,10 +22,17 @@ const FadeNavigator = config => connect(mapStateToProps, mapDispatchToProps)(
     constructor(props) {
       super(props);
       this.state = {
+        setup: false,
         from: 0,
         to: 0,
         opacity: Array(config.length).fill(0).map((x, i) => (i ? new Animated.Value(0) : new Animated.Value(1))),
       };
+    }
+
+    componentWillReceiveProps(nextProps) {
+      if (!this.props.searching && nextProps.connected) {
+        this.setState({ setup: true });
+      }
     }
 
     navigate(index) {
@@ -38,7 +47,7 @@ const FadeNavigator = config => connect(mapStateToProps, mapDispatchToProps)(
     }
 
     render() {
-      if (this.props.bridge.user && this.state.from === this.state.to) return React.createElement(config[config.length-1], { navigateNext: () => this.navigate(idx + 1) });
+      if (this.state.setup) return React.createElement(config[config.length-1], {});
       return <View style={{ flex:1, backgroundColor: theme.bgColor }}>
         { config.map((child, idx) => ((idx === this.state.from || idx === this.state.to) ?
           <Animated.View key={ idx } style={{ 
@@ -56,7 +65,7 @@ const FadeNavigator = config => connect(mapStateToProps, mapDispatchToProps)(
 const Setup = FadeNavigator([
   Welcome,
   FindBridge,
-  Home
+  FadeNavigator([Home, TimelineScreen])
 ]);
 
 export default Setup;

@@ -1,29 +1,18 @@
 
 import type { Action } from './types';
 
-export const ADD_USER = 'ADD_USER';
-export const REMOVE_USER = 'REMOVE_USER';
-export const SELECT_BRIDGE = 'SELECT_BRIDGE';
+const huejay = require('huejay');
+const co = require('co');
 
-export function addUser(bridgeId, username):Action {
+export function findBridge() {
   return {
-    type: ADD_USER,
-    bridgeId,
-    username,
-  };
+    type: 'HUE_FIND_BRIDGE',
+  }
 }
 
-export function removeUser(bridgeId):Action {
+export function authenticate(bridge) {
   return {
-    type: REMOVE_USER,
-    bridgeId,
-  };
+    type: 'HUE_AUTHENTICATE',
+    bridge,
+  }
 }
-
-export function selectBridge(bridgeId):Action {
-  return {
-    type: SELECT_BRIDGE,
-    payload: bridgeId,
-  };
-}
-

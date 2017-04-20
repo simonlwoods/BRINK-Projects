@@ -4,8 +4,9 @@ import { Animated } from 'react-native';
 import { connect } from 'react-redux';
 import styled from 'styled-components/native';
 
-import { selectBridge } from '../../actions/bridge';
-import { Button, Container, Content, Text } from './../../components';
+import { findBridge } from '../../actions/bridge';
+import { Button, Header, Container, Content, Text } from './../../components';
+import DefaultHeader from './../DefaultHeader';
 
 const AnimatedContainer = Animated.createAnimatedComponent(Container);
 
@@ -17,58 +18,38 @@ class FindBridge extends Component {
     super(props);
     this.state = {
       opacity: new Animated.Value(1),
-      found: false,
-      searching: false,
-      searchComplete: false,
+      failed: false,
     };
   }
 
-  discover() {
-    co(function* () {
-      const bridges = yield huejay.discover();
-      for (const bridge of bridges) {
-        const client = new huejay.Client({ host: bridge.ip });
-        let user = new client.users.User; // eslint-disable-line
-        user.deviceType = 'polarapp';
-        try {
-          user = yield client.users.create(user);
-        } catch (error) { console.log("Not found"); }
-        if (user.username) {
-          return {
-            ...bridge,
-            user: user.username,
-          };
-        }
-      }
-      return yield Promise.reject("No bridges found");
-    }).
-      then(bridge => {
-        this.setState({
-          found: true,
-          searching: false,
-          searchComplete: true,
+  componentWillReceiveProps(nextProps) {
+    if (!this.props.connected && nextProps.connected) {
+      setTimeout(() => {
+        Animated.timing(this.state.opacity, {toValue: 0}).start(() => {
+          this.props.navigateNext();
         });
-        setTimeout(() => {
-          Animated.timing(this.state.opacity, {toValue: 0}).start(() => {
-            this.props.navigateNext();
-            this.props.selectBridge(bridge)
-          });
-        }, 1000);
-      }, error => {
-        this.setState({
-          found: false,
-          searching: false,
-          searchComplete: true,
-        });
-      });
+      }, 1000);
+    } 
+    if (this.props.searching && !nextProps.searching && !nextProps.connected) {
+      this.setState({ failed: true });
+    }
   }
 
   render() {
     return (
       <AnimatedContainer style={{ opacity: this.state.opacity }}>
+        <Header>
+          <DefaultHeader />
+        </Header>
         <Content>
           <Text>{"Great.\nLet's get everything set up.\n\nPress the push-link button of the Hue bridge you want to connect to, and tap the button below."}</Text>
-          <Button success={this.state.found} onPress={() => this.discover()}>{ this.state.found ? "BRIDGE FOUND" : "FIND BRIDGE" }</Button>
+          <Button
+            success={this.props.connected}
+            failure={this.state.failed}
+            onPress={() => (this.setState({ failed: false }), this.props.findBridge())}
+          >
+            { this.props.connected ? "BRIDGE FOUND" : this.state.failed ? "BRIDGE NOT FOUND" : this.props.searching ? "FINDING BRIDGE..." : "FIND BRIDGE" }
+          </Button>
         </Content>
       </AnimatedContainer>
     );
@@ -77,15 +58,17 @@ class FindBridge extends Component {
 
 FindBridge.propTypes = {
   navigateNext: React.PropTypes.func,
-  selectBridge: React.PropTypes.func,
+  findBridge: React.PropTypes.func,
 };
 
 const mapDispatchToProps = {
-  selectBridge,
+  findBridge,
 };
 
 const mapStateToProps = state => ({
+  connected: state.bridges.state.connected,
+  searching: state.bridges.state.searching,
+  bridge: state.bridges.current,
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(FindBridge);
-

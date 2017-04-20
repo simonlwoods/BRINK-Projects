@@ -4,7 +4,7 @@
   "private": true,
   "devDependencies": {
     "jest-expo": "^0.2.1",
-    "react-native-scripts": "0.0.19",
+    "react-native-scripts": "^0.0.27",
     "react-test-renderer": "~15.4.0"
   },
   "main": "./node_modules/react-native-scripts/build/bin/crna-entry.js",
@@ -20,11 +20,14 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^4.0.0",
+    "art": "^0.10.1",
     "buffer": "^5.0.5",
     "co": "^4.6.0",
     "color": "^0.11.3",
+    "d3": "^4.8.0",
+    "d3-dsv": "^1.0.5",
     "eslint": "^3.18.0",
-    "expo": "14.0.2",
+    "expo": "^16.0.0",
     "huejay": "^1.5.0",
     "lodash": "^4.13.1",
     "moment": "^2.13.0",
