@@ -31,4 +31,5 @@ export default combineReducers({
   current: bridge,
   list: bridgeList,
   state: bridgeManagerState,
+  users: (state = {}) => state,
 });
