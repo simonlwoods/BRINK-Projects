@@ -60,6 +60,7 @@ const Gradient = (
 				rgb = rgb.map(x => Math.floor(x));
 				return (
 					<Svg.Stop
+						key={i / (data.length / 10)}
 						offset={i / (data.length / 10) + ""}
 						stopColor={`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`}
 						stopOpacity={1}
