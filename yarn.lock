@@ -139,6 +139,10 @@ align-text@^0.1.1, align-text@^0.1.3:
     longest "^1.0.1"
     repeat-string "^1.5.2"
 
+almost-equal@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/almost-equal/-/almost-equal-1.1.0.tgz#f851c631138757994276aa2efbe8dfa3066cccdd"
+
 alter@~0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/alter/-/alter-0.2.0.tgz#c7588808617572034aae62480af26b1d4d1cb3cd"
@@ -271,7 +275,7 @@ arrify@^1.0.0, arrify@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/arrify/-/arrify-1.0.1.tgz#898508da2226f380df904728456849c1501a4b0d"
 
-art@^0.10.0, art@^0.10.1:
+art@^0.10.0:
   version "0.10.1"
   resolved "https://registry.yarnpkg.com/art/-/art-0.10.1.tgz#38541883e399225c5e193ff246e8f157cf7b2146"
 
@@ -1581,6 +1585,13 @@ color-name@^1.0.0, color-name@^1.1.1:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/color-name/-/color-name-1.1.2.tgz#5c8ab72b64bd2215d617ae9559ebb148475cf98d"
 
+color-space@^1.14.7:
+  version "1.14.7"
+  resolved "https://registry.yarnpkg.com/color-space/-/color-space-1.14.7.tgz#b7f5a31779427bb25f9927a69410d80c2eaaa71b"
+  dependencies:
+    husl "^5.0.0"
+    mumath "^3.0.0"
+
 color-string@^0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/color-string/-/color-string-0.3.0.tgz#27d46fb67025c5c2fa25993bfbf579e47841b991"
@@ -1912,7 +1923,7 @@ d3-drag@1, d3-drag@1.0.4:
     d3-dispatch "1"
     d3-selection "1"
 
-d3-dsv@1, d3-dsv@1.0.5, d3-dsv@^1.0.5:
+d3-dsv@1, d3-dsv@1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/d3-dsv/-/d3-dsv-1.0.5.tgz#419f7db47f628789fc3fdb636e678449d0821136"
   dependencies:
@@ -3260,6 +3271,10 @@ huejay@^1.5.0:
     moment "~2.17.1"
     sprintf-js "~1.0.3"
 
+husl@^5.0.0:
+  version "5.0.3"
+  resolved "https://registry.yarnpkg.com/husl/-/husl-5.0.3.tgz#ee272aaff1bebe40df3588ed007b70de7e679788"
+
 hyphenate-style-name@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/hyphenate-style-name/-/hyphenate-style-name-1.0.2.tgz#31160a36930adaf1fc04c6074f7eb41465d4ec4b"
@@ -4509,6 +4524,12 @@ multipipe@^0.1.2:
   resolved "https://registry.yarnpkg.com/multipipe/-/multipipe-0.1.2.tgz#2a8f2ddf70eed564dff2d57f1e1a137d9f05078b"
   dependencies:
     duplexer2 "0.0.2"
+
+mumath@^3.0.0:
+  version "3.3.4"
+  resolved "https://registry.yarnpkg.com/mumath/-/mumath-3.3.4.tgz#48d4a0f0fd8cad4e7b32096ee89b161a63d30bbf"
+  dependencies:
+    almost-equal "^1.1.0"
 
 mute-stream@0.0.5:
   version "0.0.5"

@@ -1,155 +1,188 @@
+import React, { Component } from "react";
+import { Animated, Dimensions, PanResponder } from "react-native";
+import { connect } from "react-redux";
+import styled from "styled-components/native";
 
-import React, { Component } from 'react';
-import { Animated, Dimensions, PanResponder } from 'react-native';
-import { connect } from 'react-redux';
-import styled from 'styled-components/native';
+import { setLights } from "./../../actions/bridge";
 
-import { Svg } from 'expo';
-import Morph from 'art/morph/path';
+import { Svg } from "expo";
 
-import exampleData from './../../data/example';
-import { csvParse } from 'd3-dsv';
-import { scaleLinear, scaleTime } from 'd3-scale';
-import { area } from 'd3-shape';
-import { extent, bisector } from 'd3-array';
+import exampleData from "./../../data/example";
+import { csvParse } from "d3-dsv";
+import { scaleLinear, scaleTime } from "d3-scale";
+import { area } from "d3-shape";
+import { extent, bisector } from "d3-array";
 
-import { Button, Container, Content, Text } from './../../components';
+import { Button, Container, Content, Text } from "./../../components";
 
-const huejay = require('huejay');
+const color = require("color-space");
+const huejay = require("huejay");
 
-var {height, width} = Dimensions.get('window');
+var { height, width } = Dimensions.get("window");
 
 const data = csvParse(exampleData, function(d) {
-  return {
-    timestamp: new Date(d.timestamp * 1000),
-    Y: +d.Y,
-    x: +d.x,
-    y: +d.y
-  };
+	return {
+		timestamp: new Date(d.timestamp * 1000),
+		Y: +d.Y,
+		x: +d.x,
+		y: +d.y
+	};
 });
 
 const yExtent = extent(data, d => d.Y);
 
-const y = scaleLinear()
-    .domain([-yExtent[1], yExtent[1]])
-    .range([0, 150]);
+const y = scaleLinear().domain([-yExtent[1], yExtent[1]]).range([0, 150]);
 
-const x = scaleTime()
-    .domain(extent(data, d => d.timestamp))
-    .range([0, width]);
+const x = scaleTime().domain(extent(data, d => d.timestamp)).range([0, width]);
+
+const lineGraph = area()
+	.x(d => x(d.timestamp))
+	.y0(d => y(-d.Y))
+	.y1(d => y(d.Y));
 
 const areaGraph = area()
-    .x(function(d) { return x(d.timestamp); })
-    .y0(function(d) { return y(-d.Y); })
-    .y1(function(d) { return y(d.Y); })
-    .defined(function(d,i,data) { return !(i % 6); })
-//    .defined(d => d % 2); 
+	.x(d => x(d.timestamp))
+	.y0(d => y(-d.Y))
+	.y1(d => y(d.Y))
+	.defined((d, i, data) => !(i % 6));
 
 const d = areaGraph(data);
+const d2 = lineGraph(data.filter((d, i, data) => true));
 
-const Group = Animated.createAnimatedComponent(Svg.G);
+const Path = Animated.createAnimatedComponent(Svg.Path);
+Path.propTypes.style = React.PropTypes.any;
+
+const Gradient = (
+	<Svg.Defs>
+		<Svg.LinearGradient id="grad" x1="0" y1="0" x2={width} y2="0">
+			{data.filter((d, i, data) => !(i % 10)).map((d, i) => {
+				let rgb = color.xyy.rgb([d.x, d.y, d.Y]);
+				rgb = rgb.map(x => Math.floor(x));
+				return (
+					<Svg.Stop
+						offset={i / (data.length / 10) + ""}
+						stopColor={`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`}
+						stopOpacity={1}
+					/>
+				);
+			})}
+		</Svg.LinearGradient>
+	</Svg.Defs>
+);
 
 class TimelineScreen extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      anim: new Animated.Value(0)
-    };
-    this.client = new huejay.Client({
-      host: props.bridge.ip,     
-      username: props.bridge.username,
-    });
-    this.lights = this.client.lights.getAll();
-  }
+	constructor(props) {
+		super(props);
+		this.state = {
+			interacting: new Animated.Value(0),
+			anim: new Animated.Value(0),
+			pan: new Animated.ValueXY()
+		};
+		this.lastRequest = new Date(0);
+	}
 
-  setCIE(Y, x, y) {
-    console.log(Y * 10, x, y);
-    this.lights.
-      then(lights => {
-        for (let l of lights) {
-          l.brightness = Math.floor(Y * 10);
-          l.xy = [x,y];
-          l.transitionTime = 0.1;
-          this.client.lights.save(l);
-        }
-      }, ()=>{});
-  }
+	panCallback(value) {
+		const thisRequest = new Date();
+		if (thisRequest - this.lastRequest < 100) return;
+		this.lastRequest = thisRequest;
 
-  componentWillMount() {
-    this._panResponder = PanResponder.create({
-      // Ask to be the responder:
-      onStartShouldSetPanResponder: (evt, gestureState) => true,
-      onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
-      onMoveShouldSetPanResponder: (evt, gestureState) => true,
-      onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
+		const timestamp = x.invert(value.value);
+		const idx = bisector(d => d.timestamp).left(data, timestamp);
+		this.props.setLights({
+			Y: data[idx].Y,
+			xy: [data[idx].x, data[idx].y]
+		});
+	}
 
-      onPanResponderGrant: (evt, gestureState) => {
-        // The guesture has started. Show visual feedback so the user knows
-        // what is happening!
+	componentWillMount() {
+		this.state.pan.x.addListener(this.panCallback.bind(this));
+		this._panResponder = PanResponder.create({
+			onStartShouldSetPanResponder: (evt, gestureState) => true,
+			onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
+			onMoveShouldSetPanResponder: (evt, gestureState) => true,
+			onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
 
-        // gestureState.d{x,y} will be set to zero now
-        const timestamp = x.invert(gestureState.x0);
-        const idx = bisector(d => d.timestamp).left(data, timestamp);
-        const color = { x: data[idx].x, y: data[idx].y };
-        this.setCIE(data[idx].Y, color.x, color.y);
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        // The most recent move distance is gestureState.move{X,Y}
+			onPanResponderGrant: (evt, gestureState) => {
+				this.panCallback({ value: gestureState.x0 });
+				Animated.timing(this.state.interacting, { toValue: 1 }).start();
+			},
+			onPanResponderMove: Animated.event([
+				null,
+				{ moveX: this.state.pan.x, dy: this.state.pan.y }
+			]),
+			onPanResponderTerminationRequest: (evt, gestureState) => true,
+			onPanResponderRelease: (evt, gestureState) => {
+				Animated.timing(this.state.interacting, { toValue: 0 }).start();
+			},
+			onPanResponderTerminate: (evt, gestureState) => {
+				Animated.timing(this.state.interacting, { toValue: 0 }).start();
+			},
+			onShouldBlockNativeResponder: (evt, gestureState) => {
+				return true;
+			}
+		});
+	}
 
-        // The accumulated gesture distance since becoming responder is
-        // gestureState.d{x,y}
-      },
-      onPanResponderTerminationRequest: (evt, gestureState) => true,
-      onPanResponderRelease: (evt, gestureState) => {
-      },
-      onPanResponderTerminate: (evt, gestureState) => {
-      },
-      onShouldBlockNativeResponder: (evt, gestureState) => {
-        return true;
-      },
-    });
-  }
-  componentDidMount() {
-    Animated.sequence([
-      Animated.timing(this.state.anim, { toValue: 0, duration:1000 }),
-      Animated.spring(this.state.anim, { toValue: 1, duration:1000 }),
-    ]).start();
-  }
-  render() {
-    return (
-      <Container>
-        <Content>
-          <Animated.View 
-            style={{transform: [{scaleY: this.state.anim}]}}
-            {...this._panResponder.panHandlers} 
-          >
-            <Svg
-              height="150"
-              width={width}
-            >
-              <Svg.Path
-                d={d}
-                stroke="white"
-                strokeWidth={2}
-                fill="white"
-                opacity="0.25"
-              />
-            </Svg>
-          </Animated.View>
-        </Content>
-      </Container>
-    );
-  }
+	componentDidMount() {
+		Animated.sequence([
+			Animated.timing(this.state.anim, { toValue: 0, duration: 1000 }),
+			Animated.spring(this.state.anim, { toValue: 1, duration: 1000 })
+		]).start();
+	}
+
+	render() {
+		return (
+			<Container>
+				<Content>
+					<Animated.View
+						style={{
+							transform: [
+								{ scaleY: this.state.anim }
+								/*
+								{
+									scaleX: this.state.pan.y.interpolate({
+										inputRange: [-1000, 1000],
+										outputRange: [0, 2]
+									})
+								}
+								*/
+							]
+						}}
+						{...this._panResponder.panHandlers}
+					>
+						<Svg height="150" width={width}>
+							{Gradient}
+							<Svg.Path
+								d={d}
+								stroke="url(#grad)"
+								strokeWidth={2}
+								fill="url(#grad)"
+							/>
+							<Path
+								d={d2}
+								stroke="white"
+								strokeWidth={1}
+								fillOpacity={0}
+								opacity={this.state.interacting}
+							/>
+						</Svg>
+					</Animated.View>
+				</Content>
+			</Container>
+		);
+	}
 }
+
 TimelineScreen.propTypes = {
+	setLights: React.PropTypes.func
 };
 
-
 const mapDispatchToProps = {
+	setLights
 };
 
 const mapStateToProps = state => ({
-  bridge: state.bridges.current,
+	bridge: state.bridges.current
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(TimelineScreen);
