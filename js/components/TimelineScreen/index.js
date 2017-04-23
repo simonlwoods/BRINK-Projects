@@ -3,101 +3,65 @@ import { Animated, Dimensions, PanResponder } from "react-native";
 import { connect } from "react-redux";
 import styled from "styled-components/native";
 
+import { Svg } from "expo";
+import { Button, Container, Content, Text, View } from "./../../components";
+
 import { setLights } from "./../../actions/bridge";
 
-import { Svg } from "expo";
+import dataLoader from "./../../data";
+import graphData from "./../../data/graph";
 
-import exampleData from "./../../data/example";
-import { csvParse } from "d3-dsv";
-import { scaleLinear, scaleTime } from "d3-scale";
-import { area } from "d3-shape";
-import { extent, bisector } from "d3-array";
+const AnimatedPath = Animated.createAnimatedComponent(Svg.Path);
+AnimatedPath.propTypes.style = React.PropTypes.any;
 
-import { Button, Container, Content, Text } from "./../../components";
-
-const color = require("color-space");
-const huejay = require("huejay");
-
-var { height, width } = Dimensions.get("window");
-
-const data = csvParse(exampleData, function(d) {
-	return {
-		timestamp: new Date(d.timestamp * 1000),
-		Y: +d.Y,
-		x: +d.x,
-		y: +d.y
-	};
-});
-
-const yExtent = extent(data, d => d.Y);
-
-const y = scaleLinear().domain([-yExtent[1], yExtent[1]]).range([0, 150]);
-
-const x = scaleTime().domain(extent(data, d => d.timestamp)).range([0, width]);
-
-const lineGraph = area()
-	.x(d => x(d.timestamp))
-	.y0(d => y(-d.Y))
-	.y1(d => y(d.Y));
-
-const areaGraph = area()
-	.x(d => x(d.timestamp))
-	.y0(d => y(-d.Y))
-	.y1(d => y(d.Y))
-	.defined((d, i, data) => !(i % 6));
-
-const d = areaGraph(data);
-const d2 = lineGraph(data.filter((d, i, data) => true));
-
-const Path = Animated.createAnimatedComponent(Svg.Path);
-Path.propTypes.style = React.PropTypes.any;
-
-const Gradient = (
-	<Svg.Defs>
-		<Svg.LinearGradient id="grad" x1="0" y1="0" x2={width} y2="0">
-			{data.filter((d, i, data) => !(i % 10)).map((d, i) => {
-				let rgb = color.xyy.rgb([d.x, d.y, d.Y]);
-				rgb = rgb.map(x => Math.floor(x));
-				return (
-					<Svg.Stop
-						key={i / (data.length / 10)}
-						offset={i / (data.length / 10) + ""}
-						stopColor={`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`}
-						stopOpacity={1}
-					/>
-				);
-			})}
-		</Svg.LinearGradient>
-	</Svg.Defs>
-);
+const AnimatedGroup = Animated.createAnimatedComponent(Svg.G);
+AnimatedGroup.propTypes.style = React.PropTypes.any;
 
 class TimelineScreen extends Component {
+	static propTypes = {
+		setLights: React.PropTypes.func
+	};
+
 	constructor(props) {
 		super(props);
+
+		const { width } = Dimensions.get("window");
+		const height = 150;
+
 		this.state = {
+			width,
+			height,
+			...graphData(dataLoader("2007-02-19", "2007-02-21"), width * 3, height),
+			x: new Animated.Value(0),
 			interacting: new Animated.Value(0),
 			anim: new Animated.Value(0),
 			pan: new Animated.ValueXY()
 		};
+
 		this.lastRequest = new Date(0);
 	}
 
-	panCallback(value) {
+	debounce() {
 		const thisRequest = new Date();
-		if (thisRequest - this.lastRequest < 100) return;
+		if (thisRequest - this.lastRequest < 100) return false;
 		this.lastRequest = thisRequest;
+		return true;
+	}
 
-		const timestamp = x.invert(value.value);
-		const idx = bisector(d => d.timestamp).left(data, timestamp);
-		this.props.setLights({
-			Y: data[idx].Y,
-			xy: [data[idx].x, data[idx].y]
-		});
+	panCallback(value) {
+		if (this.debounce()) {
+			const data = this.state.dataForXValue(value.value);
+			this.props.setLights({
+				Y: data.Y,
+				xy: [data.x, data.y]
+			});
+		}
 	}
 
 	componentWillMount() {
 		this.state.pan.x.addListener(this.panCallback.bind(this));
-		this._panResponder = PanResponder.create({
+
+		this._timelinePanResponder = PanResponder.create({
 			onStartShouldSetPanResponder: (evt, gestureState) => true,
 			onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
 			onMoveShouldSetPanResponder: (evt, gestureState) => true,
@@ -105,7 +69,10 @@ class TimelineScreen extends Component {
 
 			onPanResponderGrant: (evt, gestureState) => {
 				this.panCallback({ value: gestureState.x0 });
-				Animated.timing(this.state.interacting, { toValue: 1 }).start();
+				Animated.timing(this.state.interacting, {
+					toValue: 1,
+					duration: 250
+				}).start();
 			},
 			onPanResponderMove: Animated.event([
 				null,
@@ -113,10 +80,49 @@ class TimelineScreen extends Component {
 			]),
 			onPanResponderTerminationRequest: (evt, gestureState) => true,
 			onPanResponderRelease: (evt, gestureState) => {
-				Animated.timing(this.state.interacting, { toValue: 0 }).start();
+				Animated.timing(this.state.interacting, {
+					toValue: 0,
+					duration: 250
+				}).start();
 			},
 			onPanResponderTerminate: (evt, gestureState) => {
-				Animated.timing(this.state.interacting, { toValue: 0 }).start();
+				Animated.timing(this.state.interacting, {
+					toValue: 0,
+					duration: 250
+				}).start();
+			},
+			onShouldBlockNativeResponder: (evt, gestureState) => {
+				return true;
+			}
+		});
+
+		this._swipePanResponder = PanResponder.create({
+			onStartShouldSetPanResponder: (evt, gestureState) => true,
+			onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
+			onMoveShouldSetPanResponder: (evt, gestureState) => true,
+			onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
+
+			onPanResponderGrant: (evt, gestureState) => {
+				this.state.x.extractOffset();
+				//this.state.x.setValue(0);
+				Animated.timing(this.state.interacting, {
+					toValue: 1,
+					duration: 250
+				}).start();
+			},
+			onPanResponderMove: Animated.event([null, { dx: this.state.x }]),
+			onPanResponderTerminationRequest: (evt, gestureState) => true,
+			onPanResponderRelease: (evt, gestureState) => {
+				Animated.timing(this.state.interacting, {
+					toValue: 0,
+					duration: 250
+				}).start();
+			},
+			onPanResponderTerminate: (evt, gestureState) => {
+				Animated.timing(this.state.interacting, {
+					toValue: 0,
+					duration: 250
+				}).start();
 			},
 			onShouldBlockNativeResponder: (evt, gestureState) => {
 				return true;
@@ -126,7 +132,7 @@ class TimelineScreen extends Component {
 
 	componentDidMount() {
 		Animated.sequence([
-			Animated.timing(this.state.anim, { toValue: 0, duration: 1000 }),
+			Animated.timing(this.state.anim, { toValue: 0, duration: 500 }),
 			Animated.spring(this.state.anim, { toValue: 1, duration: 1000 })
 		]).start();
 	}
@@ -135,32 +141,34 @@ class TimelineScreen extends Component {
 		return (
 			<Container>
 				<Content>
+					<View
+						{...this._swipePanResponder.panHandlers}
+						style={{
+							height: this.state.height,
+							width: this.state.width
+						}}
+					/>
 					<Animated.View
 						style={{
+							width: 3 * this.state.width,
 							transform: [
-								{ scaleY: this.state.anim }
-								/*
-								{
-									scaleX: this.state.pan.y.interpolate({
-										inputRange: [-1000, 1000],
-										outputRange: [0, 2]
-									})
-								}
-								*/
+								{ scaleY: this.state.anim },
+								{ translateX: this.state.x }
 							]
 						}}
-						{...this._panResponder.panHandlers}
+						{...this._timelinePanResponder.panHandlers}
 					>
-						<Svg height="150" width={width}>
-							{Gradient}
+						<Svg height={this.state.height} width={3 * this.state.width}>
+							<Svg.Defs>
+								{this.state.gradient}
+							</Svg.Defs>
 							<Svg.Path
-								d={d}
+								d={this.state.bar}
 								stroke="url(#grad)"
-								strokeWidth={2}
 								fill="url(#grad)"
 							/>
-							<Path
-								d={d2}
+							<AnimatedPath
+								d={this.state.line}
 								stroke="white"
 								strokeWidth={1}
 								fillOpacity={0}
@@ -168,22 +176,23 @@ class TimelineScreen extends Component {
 							/>
 						</Svg>
 					</Animated.View>
+					<View
+						{...this._swipePanResponder.panHandlers}
+						style={{
+							height: 150,
+							width: this.state.width
+						}}
+					/>
 				</Content>
 			</Container>
 		);
 	}
 }
 
-TimelineScreen.propTypes = {
-	setLights: React.PropTypes.func
-};
-
 const mapDispatchToProps = {
 	setLights
 };
 
-const mapStateToProps = state => ({
-	bridge: state.bridges.current
-});
+const mapStateToProps = state => ({});
 
 export default connect(mapStateToProps, mapDispatchToProps)(TimelineScreen);
