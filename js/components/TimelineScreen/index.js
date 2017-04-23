@@ -26,12 +26,19 @@ class TimelineScreen extends Component {
 		super(props);
 
 		const { width } = Dimensions.get("window");
-		const height = 150;
+		const height = 225;
+		const spacing = 2;
 
 		this.state = {
+			spacing,
 			width,
 			height,
-			...graphData(dataLoader("2007-02-19", "2007-02-21"), width * 3, height),
+			...graphData(
+				dataLoader("2007-02-19", "2007-02-21"),
+				width * 3,
+				height,
+				spacing
+			),
 			x: new Animated.Value(0),
 			interacting: new Animated.Value(0),
 			anim: new Animated.Value(0),
@@ -71,7 +78,7 @@ class TimelineScreen extends Component {
 				this.panCallback({ value: gestureState.x0 });
 				Animated.timing(this.state.interacting, {
 					toValue: 1,
-					duration: 250
+					duration: 150
 				}).start();
 			},
 			onPanResponderMove: Animated.event([
@@ -82,13 +89,13 @@ class TimelineScreen extends Component {
 			onPanResponderRelease: (evt, gestureState) => {
 				Animated.timing(this.state.interacting, {
 					toValue: 0,
-					duration: 250
+					duration: 150
 				}).start();
 			},
 			onPanResponderTerminate: (evt, gestureState) => {
 				Animated.timing(this.state.interacting, {
 					toValue: 0,
-					duration: 250
+					duration: 150
 				}).start();
 			},
 			onShouldBlockNativeResponder: (evt, gestureState) => {
@@ -107,7 +114,7 @@ class TimelineScreen extends Component {
 				//this.state.x.setValue(0);
 				Animated.timing(this.state.interacting, {
 					toValue: 1,
-					duration: 250
+					duration: 150
 				}).start();
 			},
 			onPanResponderMove: Animated.event([null, { dx: this.state.x }]),
@@ -115,13 +122,13 @@ class TimelineScreen extends Component {
 			onPanResponderRelease: (evt, gestureState) => {
 				Animated.timing(this.state.interacting, {
 					toValue: 0,
-					duration: 250
+					duration: 150
 				}).start();
 			},
 			onPanResponderTerminate: (evt, gestureState) => {
 				Animated.timing(this.state.interacting, {
 					toValue: 0,
-					duration: 250
+					duration: 150
 				}).start();
 			},
 			onShouldBlockNativeResponder: (evt, gestureState) => {
@@ -144,7 +151,7 @@ class TimelineScreen extends Component {
 					<View
 						{...this._swipePanResponder.panHandlers}
 						style={{
-							height: this.state.height,
+							height: 100,
 							width: this.state.width
 						}}
 					/>
@@ -164,22 +171,35 @@ class TimelineScreen extends Component {
 							</Svg.Defs>
 							<Svg.Path
 								d={this.state.bar}
-								stroke="url(#grad)"
-								fill="url(#grad)"
-							/>
-							<AnimatedPath
-								d={this.state.line}
-								stroke="white"
-								strokeWidth={1}
-								fillOpacity={0}
-								opacity={this.state.interacting}
+								stroke="white" //"url(#grad)"
+								strokeWidth={this.state.spacing - 1}
+								strokeOpacity={0.25}
 							/>
 						</Svg>
+						<Animated.View
+							style={{
+								position: "absolute",
+								top: 0,
+								opacity: this.state.interacting
+							}}
+						>
+							<Svg height={this.state.height} width={3 * this.state.width}>
+								<Svg.Defs>
+									{this.state.gradient}
+								</Svg.Defs>
+								<Svg.Path
+									d={this.state.line}
+									stroke="url(#grad)" //"white"
+									strokeWidth={1}
+									fillOpacity={0}
+								/>
+							</Svg>
+						</Animated.View>
 					</Animated.View>
 					<View
 						{...this._swipePanResponder.panHandlers}
 						style={{
-							height: 150,
+							height: 100,
 							width: this.state.width
 						}}
 					/>

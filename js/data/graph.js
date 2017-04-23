@@ -6,15 +6,18 @@ import { LinearGradient, Stop } from "react-native-svg";
 
 const color = require("color-space");
 
-const bar = (data, x, y, width) =>
+// Round data to nearest pixel for tidy bar charts
+const bar = (data, x, y, spacing) =>
 	area()
-		.x(d => x(d.timestamp))
+		.x(d => Math.round(x(d.timestamp)))
 		.y0(d => y(-d.Y))
 		.y1(d => y(d.Y))
-		.defined((d, i, data) => !(i % 3))(data);
+		.defined((d, i, data) => !(Math.round(x(d.timestamp)) % spacing))(data);
 
 const line = (data, x, y) =>
-	area().x(d => x(d.timestamp)).y0(d => y(-d.Y)).y1(d => y(d.Y))(data);
+	area().x(d => x(d.timestamp)).y0(d => y(-d.Y)).y1(d => y(d.Y))(
+		data.filter((d, i, data) => !(i % 10))
+	);
 
 const pointsPerStop = 10;
 
@@ -35,7 +38,7 @@ const gradient = (data, width) => (
 	</LinearGradient>
 );
 
-export default (data, width, height) => {
+export default (data, width, height, spacing) => {
 	const xExtent = extent(data, d => d.timestamp);
 	const yExtent = extent(data, d => d.Y);
 
@@ -45,7 +48,7 @@ export default (data, width, height) => {
 	return {
 		dataForXValue: xValue =>
 			data[bisector(d => d.timestamp).left(data, x.invert(xValue))],
-		bar: bar(data, x, y, width),
+		bar: bar(data, x, y, spacing),
 		line: line(data, x, y),
 		gradient: gradient(data, width)
 	};
