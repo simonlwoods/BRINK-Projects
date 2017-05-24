@@ -11,9 +11,13 @@ import { persistStore, autoRehydrate } from "redux-persist";
 import { ThemeProvider } from "styled-components";
 
 import bridgeManager from "./reducers/bridgeManager";
+import dataManager from "./reducers/data";
+import graphManager from "./reducers/graph";
 
 import promiseMiddleware from "./middleware/promise";
 import hueMiddleware from "./middleware/hue";
+import dataMiddleware from "./middleware/data";
+import graphMiddleware from "./middleware/graph";
 
 import AppNavigator from "./AppNavigator";
 import SplashScreen from "./components/SplashScreen";
@@ -26,6 +30,8 @@ const navReducer = (state, action) => {
 
 const appReducer = combineReducers({
 	bridges: bridgeManager,
+	data: dataManager,
+	graph: graphManager,
 	navigation: navReducer
 });
 
@@ -41,7 +47,12 @@ const AppWithNavigationState = connect(state => ({
 ));
 
 const enhancer = compose(
-	applyMiddleware(hueMiddleware, promiseMiddleware),
+	applyMiddleware(
+		dataMiddleware,
+		graphMiddleware,
+		hueMiddleware,
+		promiseMiddleware
+	),
 	autoRehydrate()
 );
 
@@ -54,7 +65,6 @@ class App extends React.Component {
 			loading: true
 		};
 		persistStore(store, { storage: AsyncStorage }, () => {
-			console.log(store.getState());
 			const bridge = store.getState().bridges.current;
 
 			if (bridge.id) {
@@ -68,12 +78,10 @@ class App extends React.Component {
 				});
 			}
 
-			setTimeout(() => {
-				this.setState({
-					loading: false
-				});
-			}, 500);
-		});
+			this.setState({
+				loading: false
+			});
+		}).purge(["data", "graph"]);
 	}
 	render() {
 		return (

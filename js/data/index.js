@@ -32,4 +32,10 @@ export default (from, to) =>
 	daysFrom(moment(from), moment(to))
 		.map(day => csvLoad(day))
 		.map(csv => csvParse(csv, rowMap))
-		.reduce((result, data) => (result.push(...data), result), []);
+		.reduce(
+			(result, data) =>
+				((result[
+					moment.unix(data[0].timestamp).format("YYYY-MM-DD")
+				] = data), result),
+			[]
+		);

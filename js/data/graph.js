@@ -1,8 +1,9 @@
-import React from "react";
+import React, { Component } from "react";
+import { InteractionManager } from "react-native";
 import { scaleLinear, scaleTime } from "d3-scale";
 import { area } from "d3-shape";
-import { extent, bisector } from "d3-array";
-import { LinearGradient, Stop } from "react-native-svg";
+import { merge, extent, bisector } from "d3-array";
+import { Svg } from "expo";
 
 const color = require("color-space");
 
@@ -21,22 +22,55 @@ const line = (data, x, y) =>
 
 const pointsPerStop = 10;
 
-const gradient = (data, width) => (
-	<LinearGradient id="grad" x1="0" y1="0" x2={width} y2="0">
-		{data.filter((d, i, data) => !(i % pointsPerStop)).map((d, i) => {
+export const Gradient = props => (
+	<Svg.LinearGradient id={props.id} x1="0" y1="0" x2={props.width} y2="0">
+		{props.data.filter((d, i, data) => !(i % pointsPerStop)).map((d, i) => {
 			let rgb = color.xyy.rgb([d.x, d.y, d.Y]);
 			rgb = rgb.map(x => Math.floor(x));
 			return (
-				<Stop
-					key={i / (data.length / pointsPerStop)}
-					offset={i / (data.length / pointsPerStop) + ""}
+				<Svg.Stop
+					key={d.timestamp}
+					offset={i / (props.data.length / pointsPerStop) + ""}
 					stopColor={`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`}
 					stopOpacity={1}
 				/>
 			);
 		})}
-	</LinearGradient>
+	</Svg.LinearGradient>
 );
+
+export const BarGraph = props => (
+	<Svg.Path
+		x={props.x}
+		d={props.data}
+		stroke={props.color}
+		strokeWidth={props.spacing - 1}
+		strokeOpacity={0.25}
+	/>
+);
+
+export const LineGraph = props => {
+	const xExtent = extent(props.data, d => d.timestamp);
+	const yExtent = [-65, 65];
+
+	const x = scaleTime().domain(xExtent).range([0, props.width]);
+	const y = scaleLinear().domain(yExtent).range([0, props.height]);
+
+	return (
+		<Svg.G>
+			<Svg.Defs>
+				<Gradient {...props} id="gradient{props.data[0].timestamp}" />
+			</Svg.Defs>
+			<Svg.Path
+				d={line(props.data, x, y)}
+				x={props.x}
+				stroke="url(#gradient{props.data[0].timestamp})"
+				strokeWidth={1}
+				fillOpacity={0}
+			/>
+		</Svg.G>
+	);
+};
 
 export default (data, width, height, spacing) => {
 	const xExtent = extent(data, d => d.timestamp);

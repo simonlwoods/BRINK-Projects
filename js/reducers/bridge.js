@@ -27,13 +27,11 @@ export default function(state: State = initialState, action: Action): State {
 			}
 			return { ...state, authentication: "pending" };
 		case "HUE_AUTHENTICATE_SUCCESS":
-			console.log("Authenticate success");
 			if (state == {} || action.bridge.id !== state.id) {
 				return state;
 			}
 			return { ...state, authentication: "success" };
 		case "HUE_AUTHENTICATE_FAILURE":
-			console.log("Authenticate failure");
 			if (state == {} || action.bridge.id !== state.id) {
 				return state;
 			}
