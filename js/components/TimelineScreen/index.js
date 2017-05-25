@@ -46,7 +46,7 @@ class TimelineScreen extends Component {
 
 		const { width } = Dimensions.get("window");
 		const height = 225;
-		const spacing = 4;
+		const spacing = 3;
 
 		this.currentDate = moment("2007-11-10");
 		const week = Math.floor(this.currentDate.dayOfYear() / 7);
@@ -57,7 +57,6 @@ class TimelineScreen extends Component {
 			week,
 			width,
 			height,
-			spacing,
 			swipe: new Animated.Value(0),
 			day: new Animated.Value(0),
 			interacting: new Animated.Value(0),
@@ -131,7 +130,7 @@ class TimelineScreen extends Component {
 			const jan1st = moment("2007-01-01");
 			const week1st = moment(jan1st).add(week, "weeks");
 
-			const newDay = week1st.diff(currentDate, "days") * width;
+			const newDay = (week1st.diff(currentDate, "days") - 1) * width;
 			this.state.day.setValue(newDay ? newDay : 0);
 			this.setState({
 				week
@@ -156,15 +155,18 @@ class TimelineScreen extends Component {
 		this.setDate(newDate);
 	}
 
-	panCallback(value) {
+	panCallback({ value }) {
 		if (this.debounce()) {
-			/*
-			const data = this.state.dataForXValue(value.value);
+			console.log("Press at: " + value);
+			console.log("Swipe: " + this.swipe + ", Day: " + this.day);
+			const x = value - (this.swipe + this.day);
+			console.log("Data for: " + x);
+			const data = this.props.graph["week" + this.state.week].dataForXValue(x);
+			console.log(data);
 			this.props.setLights({
 				Y: data.Y,
 				xy: [data.x, data.y]
 			});
-			*/
 		}
 	}
 
@@ -180,7 +182,7 @@ class TimelineScreen extends Component {
 		const jan1st = moment("2007-01-01");
 		const week1st = moment(jan1st).add(this.state.week, "weeks");
 
-		const newDay = week1st.diff(this.currentDate, "days") * width;
+		const newDay = (week1st.diff(this.currentDate, "days") - 1) * width;
 		this.state.day.setValue(newDay ? newDay : 0);
 	}
 
@@ -203,7 +205,7 @@ class TimelineScreen extends Component {
 		const graph = this.props.graph["week" + this.state.week];
 		const nextWeekGraph = this.props.graph["week" + (this.state.week + 1)];
 
-		const { width, height, spacing } = this.props.graph.params;
+		const { width, height } = this.props.graph.params;
 
 		return (
 			<Container>
@@ -232,7 +234,6 @@ class TimelineScreen extends Component {
 										key="week{this.state.week - 1}"
 										x={0}
 										data={lastWeekGraph.dBar}
-										spacing={spacing}
 									/>
 								: null}
 							{graph
@@ -240,7 +241,6 @@ class TimelineScreen extends Component {
 										key="week{this.state.week}"
 										x={7 * width}
 										data={graph.dBar}
-										spacing={spacing}
 									/>
 								: null}
 							{nextWeekGraph
@@ -248,7 +248,6 @@ class TimelineScreen extends Component {
 										key="week{this.state.week + 1}"
 										x={14 * width}
 										data={nextWeekGraph.dBar}
-										spacing={spacing}
 									/>
 								: null}
 						</Svg>

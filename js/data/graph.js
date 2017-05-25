@@ -44,7 +44,7 @@ export const BarGraph = props => (
 		x={props.x}
 		d={props.data}
 		stroke="white"
-		strokeWidth={2}
+		strokeWidth={1}
 		strokeOpacity={0.25}
 	/>
 );

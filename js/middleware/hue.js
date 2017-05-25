@@ -53,7 +53,7 @@ const setLights = (state, color) =>
 		const lights = state.bridges.current.lights;
 		for (light of lights) {
 			if (light.appState.selected && light.reachable) {
-				light.brightness = Math.floor(color.Y * 10);
+				light.brightness = Math.floor(color.Y / 65 * 200);
 				light.xy = color.xy;
 				light.transitionTime = 0.1;
 				yield client.lights.save(light);

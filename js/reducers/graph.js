@@ -15,7 +15,7 @@ export default function(state = initialState, action) {
 				[action.id]: {
 					dBar: action.dBar,
 					dCount: action.dCount,
-					data: action.data
+					dataForXValue: action.dataForXValue
 				}
 			};
 		case "GRAPH_SET_PARAMS":

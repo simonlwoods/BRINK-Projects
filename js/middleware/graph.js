@@ -56,7 +56,8 @@ const draw = (store, next, action) => {
 		id: action.id,
 		dBar: d,
 		dCount: keys.length,
-		data
+		dataForXValue: xValue =>
+			data[bisector(d => d.timestamp).left(data, x.invert(xValue))]
 	});
 };
 

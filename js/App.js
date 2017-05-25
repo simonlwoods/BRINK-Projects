@@ -84,7 +84,7 @@ class App extends React.Component {
 			}
 
 			const { width } = Dimensions.get("window");
-			store.dispatch(setParams(width, 225, 4));
+			store.dispatch(setParams(width, 225, 3));
 
 			const currentDate = moment("2007-11-10");
 			const week = Math.floor(currentDate.dayOfYear() / 7);
