@@ -3,7 +3,6 @@ const moment = require("moment");
 const initialState = {};
 
 export default function(state = initialState, action) {
-	console.log(Object.keys(state));
 	switch (action.type) {
 		case "DATA_LOAD_SUCCESS":
 			return {

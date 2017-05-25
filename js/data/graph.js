@@ -43,8 +43,8 @@ export const BarGraph = props => (
 	<Svg.Path
 		x={props.x}
 		d={props.data}
-		stroke={props.color}
-		strokeWidth={props.spacing - 1}
+		stroke="white"
+		strokeWidth={2}
 		strokeOpacity={0.25}
 	/>
 );

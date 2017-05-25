@@ -2,7 +2,7 @@ import Expo from "expo";
 
 import React, { Component } from "react";
 import { addNavigationHelpers } from "react-navigation";
-import { AsyncStorage, BackAndroid, StatusBar } from "react-native";
+import { AsyncStorage, BackAndroid, Dimensions, StatusBar } from "react-native";
 import { combineReducers, createStore, applyMiddleware, compose } from "redux";
 import { connect, Provider } from "react-redux";
 
@@ -22,6 +22,11 @@ import graphMiddleware from "./middleware/graph";
 import AppNavigator from "./AppNavigator";
 import SplashScreen from "./components/SplashScreen";
 import baseTheme from "./themes/base-theme.js";
+
+import { loadDataWeek } from "./actions/data";
+import { setParams } from "./actions/graph";
+
+const moment = require("moment");
 
 const navReducer = (state, action) => {
 	const newState = AppNavigator.router.getStateForAction(action, state);
@@ -78,8 +83,16 @@ class App extends React.Component {
 				});
 			}
 
-			this.setState({
-				loading: false
+			const { width } = Dimensions.get("window");
+			store.dispatch(setParams(width, 225, 4));
+
+			const currentDate = moment("2007-11-10");
+			const week = Math.floor(currentDate.dayOfYear() / 7);
+
+			store.dispatch(loadDataWeek(week)).then(() => {
+				this.setState({
+					loading: false
+				});
 			});
 		}).purge(["data", "graph"]);
 	}

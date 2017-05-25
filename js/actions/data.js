@@ -7,21 +7,21 @@ export function loadData(date) {
 	};
 }
 
-export function loadDataRange(start, end, redraw = false) {
+export function loadDataRange(start, end, draw = false) {
 	return {
 		type: "DATA_RANGE_LOAD",
 		start,
 		end,
-		redraw
+		draw
 	};
 }
 
-export function loadDataWeek(no, redraw = false) {
+export function loadDataWeek(no, draw = false) {
 	return {
 		type: "DATA_WEEK_LOAD",
 		id: "week" + no,
 		week: no,
-		redraw
+		draw
 	};
 }
 

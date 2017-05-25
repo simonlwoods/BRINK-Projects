@@ -62,7 +62,7 @@ function dataWeekLoad(store, next, action) {
 	const jan1st = moment("2007-01-01");
 	action.start = moment(jan1st).add(action.week, "weeks");
 	action.end = moment(action.start).add(6, "days");
-	dataRangeLoad(store, next, action);
+	return dataRangeLoad(store, next, action);
 }
 
 export default store => next => action => {

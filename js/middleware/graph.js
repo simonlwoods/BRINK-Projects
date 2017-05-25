@@ -9,15 +9,19 @@ const moment = require("moment");
 
 // Round data to nearest pixel for tidy bar charts
 const bar = (data, x, y, spacing) => {
-	const pixels = [];
+	const usedPixel = -1;
 	return area()
 		.x(d => Math.round(x(d.timestamp)))
 		.y0(d => y(-d.Y))
 		.y1(d => y(d.Y))
 		.defined((d, i, data) => {
 			const pixel = Math.round(x(d.timestamp));
-			pixels.push(pixel);
-			return pixels.length - 1 <= pixel || !(pixel % spacing);
+			if (pixel % spacing) return false;
+			if (usedPixel < pixel) {
+				usexPixel = pixel;
+				return true;
+			}
+			return false;
 		})(data);
 };
 
@@ -60,7 +64,7 @@ export default store => next => action => {
 	const state = store.getState();
 	switch (action.type) {
 		case "DATA_RANGE_LOAD_SUCCESS":
-			if (action.redraw || !state.graph[action.id]) {
+			if (action.draw && !state.graph[action.id]) {
 				return draw(store, next, action);
 			}
 		default:

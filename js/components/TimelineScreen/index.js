@@ -25,6 +25,7 @@ import panHandler from "./PanHandler";
 import swipeHandler from "./SwipeHandler";
 
 const moment = require("moment");
+const co = require("co");
 
 class TimelineScreen extends Component {
 	static propTypes = {
@@ -39,11 +40,13 @@ class TimelineScreen extends Component {
 	};
 
 	constructor(props) {
+		InteractionManager.setDeadline(50);
+
 		super(props);
 
 		const { width } = Dimensions.get("window");
 		const height = 225;
-		const spacing = 2;
+		const spacing = 4;
 
 		this.currentDate = moment("2007-11-10");
 		const week = Math.floor(this.currentDate.dayOfYear() / 7);
@@ -72,15 +75,23 @@ class TimelineScreen extends Component {
 		this.day = 0;
 		this.state.day.addListener(({ value }) => (this.day = value));
 
-		this.requestData(true);
+		this.requestData();
 
 		this.lastRequest = new Date(0);
 	}
 
-	requestData(redraw = false) {
-		this.props.loadDataWeek(this.state.week, redraw);
-		this.props.loadDataWeek(this.state.week + 1, redraw);
-		this.props.loadDataWeek(this.state.week - 1, redraw);
+	requestData() {
+		const loadDataWeek = this.props.loadDataWeek;
+		const week = this.state.week;
+		co(function*() {
+			InteractionManager.setDeadline(50);
+			yield loadDataWeek(week, true);
+			yield loadDataWeek(week + 1, true);
+			yield loadDataWeek(week - 1, true);
+			yield loadDataWeek(week + 2, false);
+			yield loadDataWeek(week - 2, false);
+			InteractionManager.setDeadline(50);
+		});
 	}
 
 	debounce() {
@@ -127,15 +138,10 @@ class TimelineScreen extends Component {
 			});
 
 			InteractionManager.runAfterInteractions(() => {
-				this.requestData(true);
+				this.requestData();
 			});
 		}
-		console.log(new Date().getTime());
-
 		this.currentDate = currentDate;
-
-		console.log(new Date().getTime());
-		console.log("Set date");
 	}
 
 	next() {
@@ -223,27 +229,24 @@ class TimelineScreen extends Component {
 						<Svg height={height} width={width * 21}>
 							{lastWeekGraph
 								? <BarGraph
-										key="last"
+										key="week{this.state.week - 1}"
 										x={0}
 										data={lastWeekGraph.dBar}
-										color="green"
 										spacing={spacing}
 									/>
 								: null}
 							{graph
 								? <BarGraph
-										key="this"
+										key="week{this.state.week}"
 										x={7 * width}
 										data={graph.dBar}
-										color="white"
 										spacing={spacing}
 									/>
 								: null}
 							{nextWeekGraph
 								? <BarGraph
-										key="next"
+										key="week{this.state.week + 1}"
 										x={14 * width}
-										color="red"
 										data={nextWeekGraph.dBar}
 										spacing={spacing}
 									/>
