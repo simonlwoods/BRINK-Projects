@@ -7,13 +7,13 @@ const initialState = {
 };
 
 export default function(state = initialState, action) {
-	console.log(action.type);
 	switch (action.type) {
 		case "GRAPH_SET_BAR_GRAPH":
 			return {
 				...state,
 				[action.id]: {
 					dBar: action.dBar,
+					dLine: action.dLine,
 					dCount: action.dCount,
 					dataForXValue: action.dataForXValue
 				}

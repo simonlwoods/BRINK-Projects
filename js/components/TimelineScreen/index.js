@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import Background from "./../Background";
 import {
 	Animated,
 	Dimensions,
@@ -8,21 +9,34 @@ import {
 import { connect } from "react-redux";
 
 import { Svg } from "expo";
-import { Button, Container, Content, Text, View } from "./../../components";
+import {
+	Button,
+	Container,
+	Content,
+	Header,
+	Footer,
+	View
+} from "./../../components";
+
+import Time from "./../Time";
+import DailyTimeline from "./../Timeline";
+import MonthlyTimeline from "./../Timeline/monthly";
 
 import { setLights } from "./../../actions/bridge";
 import {
 	loadData,
 	loadDataRange,
 	loadDataWeek,
+	loadDataMonth,
 	unloadData
 } from "./../../actions/data";
-import { setParams, draw, drawWeek, unloadGraph } from "./../../actions/graph";
+import { setParams } from "./../../actions/graph";
 
 import { BarGraph, LineGraph } from "./../../data/graph";
 
 import panHandler from "./PanHandler";
 import swipeHandler from "./SwipeHandler";
+import pinchHandler from "./PinchHandler";
 
 const moment = require("moment");
 const co = require("co");
@@ -33,10 +47,9 @@ class TimelineScreen extends Component {
 		loadData: React.PropTypes.func,
 		loadDataRange: React.PropTypes.func,
 		loadDataWeek: React.PropTypes.func,
+		loadDataMonth: React.PropTypes.func,
 		unloadData: React.PropTypes.func,
-		setGraphParams: React.PropTypes.func,
-		drawGraph: React.PropTypes.func,
-		drawGraphWeek: React.PropTypes.func
+		setGraphParams: React.PropTypes.func
 	};
 
 	constructor(props) {
@@ -49,24 +62,35 @@ class TimelineScreen extends Component {
 		const spacing = 3;
 
 		this.currentDate = moment("2007-11-10");
+		const currentTime = moment(this.currentDate)
+			.hours(15)
+			.minutes(56)
+			.seconds(50);
 		const week = Math.floor(this.currentDate.dayOfYear() / 7);
+		const month = this.currentDate.month();
 
 		props.setGraphParams(width, height, spacing);
 
 		this.state = {
+			currentTime,
 			week,
+			month,
 			width,
 			height,
 			swipe: new Animated.Value(0),
 			day: new Animated.Value(0),
 			interacting: new Animated.Value(0),
 			anim: new Animated.Value(0),
-			pan: new Animated.ValueXY()
+			pan: new Animated.ValueXY(),
+			pinch: new Animated.Value(1)
 		};
 
 		this.state.x = Animated.add(
-			Animated.add(this.state.day, this.state.swipe),
-			new Animated.Value(-7 * width)
+			Animated.multiply(
+				this.state.pinch,
+				Animated.add(this.state.day, this.state.swipe)
+			),
+			new Animated.Value(-10 * width)
 		);
 
 		this.swipe = 0;
@@ -81,14 +105,17 @@ class TimelineScreen extends Component {
 
 	requestData() {
 		const loadDataWeek = this.props.loadDataWeek;
+		const loadDataMonth = this.props.loadDataMonth;
 		const week = this.state.week;
+		const month = this.state.month;
 		co(function*() {
 			InteractionManager.setDeadline(50);
 			yield loadDataWeek(week, true);
 			yield loadDataWeek(week + 1, true);
 			yield loadDataWeek(week - 1, true);
-			yield loadDataWeek(week + 2, false);
-			yield loadDataWeek(week - 2, false);
+			yield loadDataMonth(month, true);
+			yield loadDataWeek(week + 2, true);
+			yield loadDataWeek(week - 2, true);
 			InteractionManager.setDeadline(50);
 		});
 	}
@@ -125,10 +152,11 @@ class TimelineScreen extends Component {
 
 		const currentDate = moment(date);
 		const week = Math.floor(currentDate.dayOfYear() / 7);
+		const month = currentDate.month();
 
 		if (week !== this.state.week) {
 			const jan1st = moment("2007-01-01");
-			const week1st = moment(jan1st).add(week, "weeks");
+			const week1st = moment(jan1st).add(week, "weeks").add(3, "days");
 
 			const newDay = (week1st.diff(currentDate, "days") - 1) * width;
 			this.state.day.setValue(newDay ? newDay : 0);
@@ -156,13 +184,21 @@ class TimelineScreen extends Component {
 	}
 
 	panCallback({ value }) {
+		const { width } = this.props.graph.params;
+		const x = value - (this.swipe + this.day);
+		let data;
+		if (x < 0) {
+			data = this.props.graph["week" + (this.state.week - 1)].dataForXValue(
+				7 * width + x
+			);
+		} else {
+			data = this.props.graph["week" + this.state.week].dataForXValue(x);
+		}
+
+		this.setState({
+			currentTime: moment(data.timestamp)
+		});
 		if (this.debounce()) {
-			console.log("Press at: " + value);
-			console.log("Swipe: " + this.swipe + ", Day: " + this.day);
-			const x = value - (this.swipe + this.day);
-			console.log("Data for: " + x);
-			const data = this.props.graph["week" + this.state.week].dataForXValue(x);
-			console.log(data);
 			this.props.setLights({
 				Y: data.Y,
 				xy: [data.x, data.y]
@@ -180,7 +216,7 @@ class TimelineScreen extends Component {
 		this.state.swipe.setValue(swipe ? swipe : 0);
 
 		const jan1st = moment("2007-01-01");
-		const week1st = moment(jan1st).add(this.state.week, "weeks");
+		const week1st = moment(jan1st).add(this.state.week, "weeks").add(3, "days");
 
 		const newDay = (week1st.diff(this.currentDate, "days") - 1) * width;
 		this.state.day.setValue(newDay ? newDay : 0);
@@ -191,6 +227,7 @@ class TimelineScreen extends Component {
 
 		this._timelinePanResponder = panHandler(this);
 		this._swipePanResponder = swipeHandler(this);
+		this._pinchResponder = pinchHandler(this.state.pinch);
 	}
 
 	componentDidMount() {
@@ -201,65 +238,45 @@ class TimelineScreen extends Component {
 	}
 
 	render() {
-		const lastWeekGraph = this.props.graph["week" + (this.state.week - 1)];
-		const graph = this.props.graph["week" + this.state.week];
-		const nextWeekGraph = this.props.graph["week" + (this.state.week + 1)];
+		const src = require("./../../../images/antarctic_light.jpg");
 
 		const { width, height } = this.props.graph.params;
 
+		const displayTime = moment(this.state.currentTime);
+		displayTime.minutes(Math.floor(displayTime.minutes() / 15) * 15);
+
 		return (
-			<Container>
+			<Container background={src}>
+				<Header style={{ height: 80 }}>
+					<Time time={displayTime} />
+				</Header>
 				<Content>
-					<View
-						{...this._swipePanResponder.panHandlers}
-						style={{
-							height: 100,
-							width
-						}}
-					/>
-					<Animated.View
-						style={{
-							width: width * 21,
-							alignSelf: "flex-start",
-							transform: [
-								{ scaleY: this.state.anim },
-								{ translateX: this.state.x }
-							]
-						}}
-						{...this._timelinePanResponder.panHandlers}
-					>
-						<Svg height={height} width={width * 21}>
-							{lastWeekGraph
-								? <BarGraph
-										key="week{this.state.week - 1}"
-										x={0}
-										data={lastWeekGraph.dBar}
-									/>
-								: null}
-							{graph
-								? <BarGraph
-										key="week{this.state.week}"
-										x={7 * width}
-										data={graph.dBar}
-									/>
-								: null}
-							{nextWeekGraph
-								? <BarGraph
-										key="week{this.state.week + 1}"
-										x={14 * width}
-										data={nextWeekGraph.dBar}
-									/>
-								: null}
-						</Svg>
-					</Animated.View>
-					<View
-						{...this._swipePanResponder.panHandlers}
-						style={{
-							height: 100,
-							width
-						}}
-					/>
+					<View style={{ width }} responder={this._pinchResponder}>
+						<View
+							style={{
+								height: 100,
+								width
+							}}
+							{...this._swipePanResponder.panHandlers}
+						/>
+						<DailyTimeline
+							week={this.state.week}
+							scaleY={this.state.anim}
+							translateX={this.state.x}
+							scaleX={this.state.pinch}
+							interacting={this.state.interacting}
+							panHandlers={this._timelinePanResponder.panHandlers}
+						/>
+						<View
+							style={{
+								height: 100,
+								width
+							}}
+							{...this._swipePanResponder.panHandlers}
+						/>
+					</View>
 				</Content>
+				<Footer style={{ height: 80 }} />
 			</Container>
 		);
 	}
@@ -270,10 +287,9 @@ const mapDispatchToProps = {
 	loadData,
 	loadDataRange,
 	loadDataWeek,
+	loadDataMonth,
 	unloadData,
-	setGraphParams: setParams,
-	drawGraph: draw,
-	drawGraphWeek: drawWeek
+	setGraphParams: setParams
 };
 
 const mapStateToProps = state => ({
@@ -282,24 +298,11 @@ const mapStateToProps = state => ({
 
 export default connect(mapStateToProps, mapDispatchToProps)(TimelineScreen);
 /*
-						<Animated.View
-							style={{
-								position: "absolute",
-								top: 0,
-								opacity: this.state.interacting
-							}}
-						>
-							<Svg height={this.state.height} width={this.state.width * count}>
-								{keys.map((key, i) => (
-									<LineGraph
-										key={key}
-										data={this.props.data[key]}
-										x={i * this.state.width}
-										width={this.state.width}
-										height={this.state.height}
-										spacing={this.state.spacing}
-									/>
-								))}
-							</Svg>
-						</Animated.View>
+						<MonthlyTimeline
+							month={this.state.month}
+							scaleY={1}
+							translateX={0}
+							scaleX={1}
+							panHandlers={this._timelinePanResponder.panHandlers}
+						/>
 						*/

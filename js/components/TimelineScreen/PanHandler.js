@@ -12,10 +12,11 @@ export default function(timelinescreen) {
 
 		onMoveShouldSetPanResponderCapture: (evt, gestureState) => false,
 
-		onPanResponderGrant: (evt, gestureState) =>
-			(timelinescreen.panCallback({
+		onPanResponderGrant: (evt, gestureState) => {
+			timelinescreen.panCallback({
 				value: gestureState.x0
-			}), timelinescreen.interacting(true)),
+			}), timelinescreen.interacting(true);
+		},
 
 		onPanResponderMove: Animated.event([
 			null,
@@ -30,6 +31,6 @@ export default function(timelinescreen) {
 		onPanResponderTerminate: (evt, gestureState) =>
 			timelinescreen.interacting(false),
 
-		onShouldBlockNativeResponder: (evt, gestureState) => true
+		onShouldBlockNativeResponder: (evt, gestureState) => false
 	});
 }

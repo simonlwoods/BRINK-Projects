@@ -5,11 +5,9 @@ export default function(timelinescreen) {
 	const startInteraction = () => {
 		timelinescreen.interacting(true);
 		interacting = true;
-		console.log("Interaction start");
 	};
 	const finishInteraction = () => {
 		interacting = false;
-		console.log("Interaction finish");
 	};
 	return PanResponder.create({
 		onStartShouldSetPanResponder: (evt, gestureState) =>
@@ -63,8 +61,10 @@ export default function(timelinescreen) {
 			}
 		},
 
-		onPanResponderTerminate: (evt, gestureState) =>
-			timelinescreen.interacting(false),
+		onPanResponderTerminate: (evt, gestureState) => {
+			timelinescreen.interacting(false);
+			finishInteraction();
+		},
 
 		onShouldBlockNativeResponder: (evt, gestureState) => true
 	});

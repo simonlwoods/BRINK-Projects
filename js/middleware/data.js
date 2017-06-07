@@ -53,7 +53,9 @@ function dataRangeLoad(store, next, action) {
 			current.add(1, "days");
 		}
 
-		action.type = "DATA_RANGE_LOAD_SUCCESS";
+		action.type = action.successType
+			? action.successType
+			: "DATA_RANGE_LOAD_SUCCESS";
 		next(action);
 	});
 }
@@ -65,6 +67,15 @@ function dataWeekLoad(store, next, action) {
 	return dataRangeLoad(store, next, action);
 }
 
+function dataMonthLoad(store, next, action) {
+	const jan1st = moment("2007-01-01");
+	action.start = moment(jan1st).month(action.month);
+	console.log(action.start.format("YYYY-MM-DD"));
+	action.end = moment(jan1st).month(action.month + 1).date(-1);
+	console.log(action.end.format("YYYY-MM-DD"));
+	return dataRangeLoad(store, next, action);
+}
+
 export default store => next => action => {
 	switch (action.type) {
 		case "DATA_LOAD":
@@ -73,6 +84,8 @@ export default store => next => action => {
 			return dataRangeLoad(store, next, action);
 		case "DATA_WEEK_LOAD":
 			return dataWeekLoad(store, next, action);
+		case "DATA_MONTH_LOAD":
+			return dataMonthLoad(store, next, action);
 		default:
 			return next(action);
 	}

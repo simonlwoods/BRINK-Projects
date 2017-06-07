@@ -24,13 +24,17 @@ const pointsPerStop = 10;
 
 export const Gradient = props => (
 	<Svg.LinearGradient id={props.id} x1="0" y1="0" x2={props.width} y2="0">
-		{props.data.filter((d, i, data) => !(i % pointsPerStop)).map((d, i) => {
+		{Array.from(
+			new Array(Math.ceil(props.width / 10)),
+			(x, i) => i * 10
+		).map((x, i) => {
+			const d = props.dataForXValue(x);
 			let rgb = color.xyy.rgb([d.x, d.y, d.Y]);
 			rgb = rgb.map(x => Math.floor(x));
 			return (
 				<Svg.Stop
 					key={d.timestamp}
-					offset={i / (props.data.length / pointsPerStop) + ""}
+					offset={x / props.width + ""}
 					stopColor={`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`}
 					stopOpacity={1}
 				/>
@@ -44,33 +48,32 @@ export const BarGraph = props => (
 		x={props.x}
 		d={props.data}
 		stroke="white"
+		fill="white"
 		strokeWidth={1}
-		strokeOpacity={0.25}
+		strokeOpacity={props.fill ? 0 : 0.25}
+		fillOpacity={props.fill ? 0.25 : 0}
 	/>
 );
 
-export const LineGraph = props => {
-	const xExtent = extent(props.data, d => d.timestamp);
-	const yExtent = [-65, 65];
-
-	const x = scaleTime().domain(xExtent).range([0, props.width]);
-	const y = scaleLinear().domain(yExtent).range([0, props.height]);
-
-	return (
-		<Svg.G>
-			<Svg.Defs>
-				<Gradient {...props} id="gradient{props.data[0].timestamp}" />
-			</Svg.Defs>
-			<Svg.Path
-				d={line(props.data, x, y)}
-				x={props.x}
-				stroke="url(#gradient{props.data[0].timestamp})"
-				strokeWidth={1}
-				fillOpacity={0}
+export const LineGraph = props => (
+	<Svg.G>
+		<Svg.Defs>
+			<Gradient
+				{...props}
+				id={"gradient" + props.dataForXValue(0).timestamp.getTime()}
 			/>
-		</Svg.G>
-	);
-};
+		</Svg.Defs>
+		<Svg.Path
+			x={props.x}
+			d={props.data}
+			stroke={
+				"url(#gradient" + props.dataForXValue(0).timestamp.getTime() + ")"
+			}
+			strokeWidth={1}
+			fillOpacity={0}
+		/>
+	</Svg.G>
+);
 
 export default (data, width, height, spacing) => {
 	const xExtent = extent(data, d => d.timestamp);

@@ -25,6 +25,17 @@ export function loadDataWeek(no, draw = false) {
 	};
 }
 
+export function loadDataMonth(no, draw = false) {
+	return {
+		type: "DATA_MONTH_LOAD",
+		id: "month" + no,
+		month: no,
+		width: 1,
+		noGaps: true,
+		draw
+	};
+}
+
 export function unloadData(date) {
 	return {
 		type: "DATA_UNLOAD"
