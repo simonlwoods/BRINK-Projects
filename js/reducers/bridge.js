@@ -1,16 +1,18 @@
 export type State = Object;
 
-const initialState = {};
+const initialState = { lights: [] };
 
 export default function(state: State = initialState, action: Action): State {
 	switch (action.type) {
 		case "HUE_GET_LIGHTS_SUCCESS":
 			for (let i = 0; i < action.result.length; i++) {
-				for (let j = 0; j < state.lights.length; j++) {
+				const length = state.lights ? state.lights.length : 0;
+				for (let j = 0; j < length; j++) {
 					if (action.result[i].id === state.lights[j].id) {
 						action.result[i].appState = state.lights[j].appState;
 					}
 				}
+
 				if (typeof action.result[i].appState === "undefined") {
 					action.result[i].appState = {
 						selected: true
