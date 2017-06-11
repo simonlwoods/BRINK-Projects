@@ -126,7 +126,7 @@ class Background extends Component {
 								{...this._panResponder.panHandlers}
 							>
 								<Text style={{ backgroundColor: "transparent" }}>
-									Rothera Base
+									Halley Base
 								</Text>
 							</View>
 						: null}
