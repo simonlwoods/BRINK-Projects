@@ -41,39 +41,77 @@ class Background extends Component {
 			onMoveShouldSetPanResponder: (evt, gestureState) => true,
 			onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
 			onPanResponderGrant: (evt, gestureState) => {
+				this.state.slide.extractOffset();
 				start = moment();
 			},
 			onPanResponderMove: Animated.event([null, { dy: this.state.slide }]),
 			onPanResponderTerminationRequest: (evt, gestureState) => true,
 			onPanResponderRelease: (evt, gestureState) => {
-				if (gestureState.dy < -50) {
-					const { height } = Dimensions.get("window");
-					Animated.decayToValue(this.state.slide, {
-						// coast to a stop
-						velocity: gestureState.vy, // velocity from gesture release
-						toValue: -height + 50
-					}).start();
-				} else {
-					const end = moment();
-					if (end.diff(start) > 500) {
-						Animated.timing(this.state.slide, {
-							toValue: 0,
-							easing: Easing.spring,
-							duration: 250
-						}).start();
+				if (this.open) {
+					if (gestureState.dy > 50 && gestureState.vy > 0) {
+						const { height } = Dimensions.get("window");
+						Animated.decayToValue(this.state.slide, {
+							// coast to a stop
+							velocity: gestureState.vy, // velocity from gesture release
+							toValue: height - 50
+						}).start(() => {
+							this.open = false;
+						});
 					} else {
-						Animated.sequence([
-							Animated.timing(this.state.slide, {
-								toValue: -50,
-								easing: Easing.ease,
-								duration: 100
-							}),
+						const end = moment();
+						if (end.diff(start) > 500) {
 							Animated.timing(this.state.slide, {
 								toValue: 0,
-								easing: Easing.ease,
+								easing: Easing.spring,
 								duration: 250
-							})
-						]).start();
+							}).start();
+						} else {
+							Animated.sequence([
+								Animated.timing(this.state.slide, {
+									toValue: 50,
+									easing: Easing.ease,
+									duration: 100
+								}),
+								Animated.timing(this.state.slide, {
+									toValue: 0,
+									easing: Easing.ease,
+									duration: 250
+								})
+							]).start();
+						}
+					}
+				} else {
+					if (gestureState.dy < -50 && gestureState.vy < 0) {
+						const { height } = Dimensions.get("window");
+						Animated.decayToValue(this.state.slide, {
+							// coast to a stop
+							velocity: gestureState.vy, // velocity from gesture release
+							toValue: -height + 50
+						}).start(() => {
+							this.open = true;
+						});
+					} else {
+						const end = moment();
+						if (end.diff(start) > 500) {
+							Animated.timing(this.state.slide, {
+								toValue: 0,
+								easing: Easing.spring,
+								duration: 250
+							}).start();
+						} else {
+							Animated.sequence([
+								Animated.timing(this.state.slide, {
+									toValue: -50,
+									easing: Easing.ease,
+									duration: 100
+								}),
+								Animated.timing(this.state.slide, {
+									toValue: 0,
+									easing: Easing.ease,
+									duration: 250
+								})
+							]).start();
+						}
 					}
 				}
 			},
