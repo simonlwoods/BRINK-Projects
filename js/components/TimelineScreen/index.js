@@ -22,7 +22,7 @@ import Time from "./../Time";
 import DailyTimeline from "./../Timeline";
 import MonthlyTimeline from "./../Timeline/monthly";
 
-import { setLights } from "./../../actions/bridge";
+import { setLights, setSchedule } from "./../../actions/bridge";
 import {
 	loadData,
 	loadDataRange,
@@ -44,6 +44,7 @@ const co = require("co");
 class TimelineScreen extends Component {
 	static propTypes = {
 		setLights: React.PropTypes.func,
+		setSchedule: React.PropTypes.func,
 		loadData: React.PropTypes.func,
 		loadDataRange: React.PropTypes.func,
 		loadDataWeek: React.PropTypes.func,
@@ -61,17 +62,15 @@ class TimelineScreen extends Component {
 		const height = 225;
 		const spacing = 3;
 
-		this.currentDate = moment("2007-11-10");
-		const currentTime = moment(this.currentDate)
-			.hours(15)
-			.minutes(56)
-			.seconds(50);
-		const week = Math.floor(this.currentDate.dayOfYear() / 7);
-		const month = this.currentDate.month();
+		const currentDate = moment().year(2007).month(7).date(20);
+		const currentTime = moment(currentDate);
+		const week = Math.floor(currentDate.dayOfYear() / 7);
+		const month = currentDate.month();
 
 		props.setGraphParams(width, height, spacing);
 
 		this.state = {
+			currentDate,
 			currentTime,
 			week,
 			month,
@@ -99,6 +98,9 @@ class TimelineScreen extends Component {
 		this.state.day.addListener(({ value }) => (this.day = value));
 
 		this.requestData();
+
+		const rebase = moment();
+		props.setSchedule(currentTime, rebase, "weekly");
 
 		this.lastRequest = new Date(0);
 	}
@@ -168,17 +170,17 @@ class TimelineScreen extends Component {
 				this.requestData();
 			});
 		}
-		this.currentDate = currentDate;
+		this.setState({ currentDate });
 	}
 
 	next() {
-		const newDate = moment(this.currentDate);
+		const newDate = moment(this.state.currentDate);
 		newDate.add(1, "days");
 		this.setDate(newDate);
 	}
 
 	previous() {
-		const newDate = moment(this.currentDate);
+		const newDate = moment(this.state.currentDate);
 		newDate.subtract(1, "days");
 		this.setDate(newDate);
 	}
@@ -218,7 +220,7 @@ class TimelineScreen extends Component {
 		const jan1st = moment("2007-01-01");
 		const week1st = moment(jan1st).add(this.state.week, "weeks").add(3, "days");
 
-		const newDay = (week1st.diff(this.currentDate, "days") - 1) * width;
+		const newDay = (week1st.diff(this.state.currentDate, "days") - 1) * width;
 		this.state.day.setValue(newDay ? newDay : 0);
 	}
 
@@ -245,10 +247,12 @@ class TimelineScreen extends Component {
 		const displayTime = moment(this.state.currentTime);
 		displayTime.minutes(Math.floor(displayTime.minutes() / 15) * 15);
 
+		const displayDate = moment(this.state.currentDate);
+
 		return (
 			<Container background={src}>
 				<Header style={{ height: 80 }}>
-					<Time time={displayTime} />
+					<Time time={displayTime} date={displayDate} />
 				</Header>
 				<Content>
 					<View style={{ width }} responder={this._pinchResponder}>
@@ -284,6 +288,7 @@ class TimelineScreen extends Component {
 
 const mapDispatchToProps = {
 	setLights,
+	setSchedule,
 	loadData,
 	loadDataRange,
 	loadDataWeek,

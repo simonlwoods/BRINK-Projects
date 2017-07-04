@@ -18,3 +18,12 @@ export function setLights(color) {
 		color
 	};
 }
+
+export function setSchedule(start, rebase, period = "weekly") {
+	return {
+		type: "HUE_SET_SCHEDULE",
+		start,
+		rebase,
+		period
+	};
+}

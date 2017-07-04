@@ -10,6 +10,7 @@ import { persistStore, autoRehydrate } from "redux-persist";
 
 import { ThemeProvider } from "styled-components";
 
+import settingsManager from "./reducers/settings";
 import bridgeManager from "./reducers/bridgeManager";
 import dataManager from "./reducers/data";
 import graphManager from "./reducers/graph";
@@ -21,6 +22,7 @@ import graphMiddleware from "./middleware/graph";
 
 import AppNavigator from "./AppNavigator";
 import SplashScreen from "./components/SplashScreen";
+import Settings from "./components/Settings";
 import baseTheme from "./themes/base-theme.js";
 
 import { loadDataWeek } from "./actions/data";
@@ -34,6 +36,7 @@ const navReducer = (state, action) => {
 };
 
 const appReducer = combineReducers({
+	settings: settingsManager,
 	bridges: bridgeManager,
 	data: dataManager,
 	graph: graphManager,
@@ -53,9 +56,9 @@ const AppWithNavigationState = connect(state => ({
 
 const enhancer = compose(
 	applyMiddleware(
+		hueMiddleware,
 		dataMiddleware,
 		graphMiddleware,
-		hueMiddleware,
 		promiseMiddleware
 	),
 	autoRehydrate()

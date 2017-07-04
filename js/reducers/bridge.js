@@ -1,9 +1,14 @@
 export type State = Object;
 
-const initialState = { lights: [] };
+const initialState = { lights: [], schedule: {} };
 
 export default function(state: State = initialState, action: Action): State {
 	switch (action.type) {
+		case "HUE_SET_SCHEDULE_SUCCESS":
+			return {
+				...state,
+				schedule: { start: action.start, period: action.period }
+			};
 		case "HUE_GET_LIGHTS_SUCCESS":
 			for (let i = 0; i < action.result.length; i++) {
 				const length = state.lights ? state.lights.length : 0;

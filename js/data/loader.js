@@ -1,3 +1,5 @@
+import generator from "./generator";
+
 export default function(date) {
 	switch (date) {
 		case "2007-02-20":
@@ -469,6 +471,6 @@ export default function(date) {
 		case "2007-12-31":
 			return require("./files/2007-12-31").default;
 		default:
-			return "";
+			return generator(date);
 	}
 }

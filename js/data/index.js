@@ -22,7 +22,7 @@ const daysFrom = (from, to, array = []) =>
 */
 
 const rowMap = d => ({
-	timestamp: new Date(d.timestamp * 1000),
+	timestamp: moment.unix(d.timestamp * 1000),
 	Y: +d.Y,
 	x: +d.x,
 	y: +d.y

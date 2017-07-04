@@ -11,7 +11,7 @@ function dataLoad(store, next, action) {
 	const key = moment(action.date).format("YYYY-MM-DD");
 	const data = store.getState().data;
 	if (Object.prototype.hasOwnProperty.call(data, key)) {
-		return next(action);
+		return Promise.resolve(data[key]);
 	}
 
 	return next({
