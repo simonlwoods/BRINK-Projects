@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import Background from "./../Background";
+import { StyleSheet } from "react-native";
 import {
 	Animated,
 	Dimensions,
@@ -15,12 +15,15 @@ import {
 	Content,
 	Header,
 	Footer,
-	View
+	View,
+	Text
 } from "./../../components";
 
 import Time from "./../Time";
 import DailyTimeline from "./../Timeline";
 import MonthlyTimeline from "./../Timeline/monthly";
+
+import ImageSlider from "./../Background/imageSlider";
 
 import { setLights, setSchedule } from "./../../actions/bridge";
 import {
@@ -96,6 +99,12 @@ class TimelineScreen extends Component {
 		this.state.swipe.addListener(({ value }) => (this.swipe = value));
 		this.day = 0;
 		this.state.day.addListener(({ value }) => (this.day = value));
+
+		this.imageSlide = new Animated.Value(0);
+		this.imageResponder = ImageSlider(this.imageSlide);
+
+		this.settingsSlide = new Animated.Value(0);
+		this.settingsResponder = ImageSlider(this.settingsSlide);
 
 		this.requestData();
 
@@ -187,13 +196,20 @@ class TimelineScreen extends Component {
 
 	panCallback({ value }) {
 		const { width } = this.props.graph.params;
-		const x = value - (this.swipe + this.day);
+		const x = value - (this.swipe + this.day - width);
 		let data;
+
 		if (x < 0) {
+			if (!this.props.graph["week" + (this.state.week - 1)]) {
+				return;
+			}
 			data = this.props.graph["week" + (this.state.week - 1)].dataForXValue(
 				7 * width + x
 			);
 		} else {
+			if (!this.props.graph["week" + this.state.week]) {
+				return;
+			}
 			data = this.props.graph["week" + this.state.week].dataForXValue(x);
 		}
 
@@ -249,8 +265,14 @@ class TimelineScreen extends Component {
 
 		const displayDate = moment(this.state.currentDate);
 
+		//console.log(this.imageSlide);
+
 		return (
-			<Container background={src}>
+			<Container
+				background={src}
+				imageSlide={this.imageSlide}
+				settingsSlide={this.settingsSlide}
+			>
 				<Header style={{ height: 80 }}>
 					<Time time={displayTime} date={displayDate} />
 				</Header>
@@ -280,7 +302,26 @@ class TimelineScreen extends Component {
 						/>
 					</View>
 				</Content>
-				<Footer style={{ height: 80 }} />
+				<Footer style={{ height: 80 }}>
+					<View style={{ marginTop: 30, height: 50, flexDirection: "row" }}>
+						<View
+							style={{ backgroundColor: "transparent" }}
+							{...this.imageResponder.panHandlers}
+						>
+							<Text style={{ backgroundColor: "transparent" }}>
+								Halley Base
+							</Text>
+						</View>
+						<View
+							style={{ backgroundColor: "transparent" }}
+							{...this.settingsResponder.panHandlers}
+						>
+							<Text style={{ backgroundColor: "transparent" }}>
+								Settings
+							</Text>
+						</View>
+					</View>
+				</Footer>
 			</Container>
 		);
 	}

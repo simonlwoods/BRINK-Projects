@@ -53,17 +53,31 @@ const getLights = state =>
 const setLights = (state, color) =>
 	function*() {
 		const client = getClient(state.bridges.current);
-		const group = yield client.groups.getById(0);
-		group.brightness = Math.floor(color.Y / 65 * 200);
-		group.xy = color.xy;
-		group.transitionTime = 0.1;
-		yield client.groups.save(group);
-		return yield client.lights.getAll();
+		const lights = yield client.lights.getAll();
+		for (let light of lights) {
+			light.brightness = Math.floor(color.Y / 65 * 200);
+			light.on = light.brightness > 0;
+			light.xy = color.xy;
+			light.transitionTime = 0.1;
+			yield client.lights.save(light);
+		}
+		return lights;
 	};
 
-const setSchedule = (store, next, start, rebase, period) =>
-	function*() {
-		start = moment(start);
+const setSchedule = (store, next, addToQueue, action) =>
+	co(function*() {
+		const start = moment(action.start);
+		const rebase = action.rebase;
+		const period = action.period;
+
+		const queue = func => {
+			addToQueue(
+				{ type: "DUMMY_ACTION", priority: action.priority },
+				function*() {
+					return yield func();
+				}
+			);
+		};
 
 		let duration;
 		switch (period) {
@@ -81,9 +95,16 @@ const setSchedule = (store, next, start, rebase, period) =>
 		const client = getClient(state.bridges.current);
 		const schedules = yield client.schedules.getAll();
 
+		console.log("Deleting schedules");
+
 		for (let schedule of schedules) {
-			yield client.schedules.delete(schedule.id);
+			queue(() => client.schedules.delete(schedule.id));
 		}
+
+		/******/
+		//return;
+
+		console.log("Setting schedules");
 
 		const group = yield client.groups.getById(0);
 		const diff = rebase.diff(start);
@@ -113,11 +134,11 @@ const setSchedule = (store, next, start, rebase, period) =>
 			}
 			group.on = group.brightness != 0;
 			group.xy = [dataPoint.x, dataPoint.y];
-			//group.transitionTime = duration.asSeconds();
-			group.transitionTime = 1;
+			group.transitionTime = duration.asSeconds();
+			//group.transitionTime = 1;
 
-			//const rebasedTime = moment(time).add(diff, "milliseconds");
-			rebasedTime = moment(rebase).add(i * 2, "seconds");
+			const rebasedTime = moment(time).add(diff, "milliseconds");
+			//rebasedTime = moment(rebase).add(i * 2, "seconds");
 
 			const schedule = new client.schedules.Schedule();
 			schedule.name = "PolarApp schedule " + i;
@@ -128,42 +149,93 @@ const setSchedule = (store, next, start, rebase, period) =>
 			schedule.action = new client.actions.ChangeGroupAction(group);
 			schedule.autoDelete = true;
 
-			yield client.schedules
-				.create(schedule)
-				.catch(error => console.log(error));
+			queue(() =>
+				client.schedules.create(schedule).catch(error => console.log(error))
+			);
 			i++;
 		}
 		console.log("Data time ", time.format("YYYY-MM-DD HH:mm:ss"));
 		console.log("Schedule time ", rebasedTime.format("YYYY-MM-DD HH:mm:ss"));
-	};
+	});
+
+function errorHandler(error) {
+	if (typeof error === "huejay.Error") {
+		console.log(error);
+		return next({
+			type: "HUE_ERROR",
+			id: error.type,
+			message: error.message,
+			action
+		});
+	}
+	return Promise.reject(error);
+}
 
 function makeQueue(next) {
-	let queue = Promise.resolve();
+	let processing = false;
+	let queue = [];
+	let promise = Promise.resolve();
+
+	const nextInQueue = () => {
+		if (queue.length === 0) {
+			processing = false;
+			return;
+		}
+
+		queue.sort((a, b) => a.action.priority - b.action.priority);
+
+		const item = queue.shift();
+		const action = item.action;
+		const generator = item.generator;
+
+		promise
+			.then(
+				() =>
+					(action.type === "DUMMY_ACTION"
+						? co(generator).catch(errorHandler)
+						: next({
+								...action,
+								types: [
+									`${action.type}_REQUEST`,
+									`${action.type}_SUCCESS`,
+									`${action.type}_FAILURE`
+								],
+								promise: () => co(generator).catch(errorHandler)
+							}))
+			)
+			.then(
+				result => {
+					item.callback(result);
+				},
+				error => {
+					item.callback(null, error);
+				}
+			)
+			.then(nextInQueue);
+	};
+
 	return (action, generator) => {
-		queue = queue.then(() =>
-			next({
-				...action,
-				types: [
-					`${action.type}_REQUEST`,
-					`${action.type}_SUCCESS`,
-					`${action.type}_FAILURE`
-				],
-				promise: () =>
-					co(generator).catch(error => {
-						if (typeof error === "huejay.Error") {
-							console.log(error);
-							return next({
-								type: "HUE_ERROR",
-								id: error.type,
-								message: error.message,
-								action
-							});
-						}
-						return new Promise.reject(error);
-					})
-			})
-		);
-		return queue;
+		if (typeof action.priority == "undefined") action.priority = 10;
+
+		let callback;
+		const actionPromise = new Promise((resolve, reject) => {
+			callback = (result, error) => {
+				if (result !== null) {
+					resolve(result);
+				} else {
+					reject(error);
+				}
+			};
+		});
+
+		queue.push({ action, generator, callback });
+
+		if (!processing) {
+			processing = true;
+			nextInQueue();
+		}
+
+		return actionPromise;
 	};
 }
 
@@ -183,10 +255,7 @@ export default store => next => {
 			case "HUE_SET_LIGHTS":
 				return addToQueue(action, setLights(state, action.color));
 			case "HUE_SET_SCHEDULE":
-				return addToQueue(
-					action,
-					setSchedule(store, next, action.start, action.rebase, action.period)
-				);
+				return addToQueue(action, setSchedule(store, next, addToQueue, action));
 			default:
 				return next(action);
 		}

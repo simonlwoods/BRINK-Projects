@@ -78,7 +78,11 @@ export default class Container extends Component {
 	render() {
 		return (
 			<ContainerView {...this.props}>
-				<Background src={this.props.background}>
+				<Background
+					src={this.props.background}
+					imageSlide={this.props.imageSlide}
+					settingsSlide={this.props.settingsSlide}
+				>
 					{this.renderHeader()}
 					{this.renderContent()}
 					{this.renderFooter()}

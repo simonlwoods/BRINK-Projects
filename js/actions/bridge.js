@@ -15,7 +15,8 @@ export function authenticate() {
 export function setLights(color) {
 	return {
 		type: "HUE_SET_LIGHTS",
-		color
+		color,
+		priority: 1
 	};
 }
 

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { FlatList } from "react-native";
+import { View, FlatList } from "react-native";
 import { connect } from "react-redux";
 import { StackNavigator } from "react-navigation";
 
@@ -13,17 +13,19 @@ import theme from "./../../themes/base-theme";
 
 class BaseSettings extends Component {
 	render() {
-		return <Text>Test</Text>;
-		<FlatList
-			data={[
-				{
-					text: "Delete data on startup"
-				}
-			]}
-			renderItem={item => <Text>{item.text}</Text>}
-		/>;
+		return <View />;
 	}
 }
+/*
+			<FlatList
+				data={[
+					{
+						text: "Delete data on startup"
+					}
+				]}
+				renderItem={({ item }) => <Text>{item.text}</Text>}
+			/>
+			*/
 const mapDispatchToProps = {
 	settingsPurge
 };
