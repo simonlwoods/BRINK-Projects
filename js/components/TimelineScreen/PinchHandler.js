@@ -12,7 +12,7 @@ function getDistance(evt) {
 	return Math.sqrt(x * x + y * y);
 }
 
-export default function(animatedValue) {
+export default function(animatedValue, getCurrentDate) {
 	let startDistance = 0;
 	let lastValue = 0;
 	return {
@@ -37,8 +37,9 @@ export default function(animatedValue) {
 		onResponderTerminationRequest: evt => true,
 		onResponderRelease: evt => {
 			if (lastValue <= 0.2) {
+				const days = getCurrentDate().daysInMonth();
 				Animated.spring(animatedValue, {
-					toValue: 1 / 28
+					toValue: 1 / days
 				}).start();
 			} else {
 				// Spring back to same day

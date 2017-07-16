@@ -114,6 +114,10 @@ class TimelineScreen extends Component {
 		this.lastRequest = new Date(0);
 	}
 
+	getCurrentDate() {
+		return this.state.currentDate;
+	}
+
 	requestData() {
 		const loadDataWeek = this.props.loadDataWeek;
 		const loadDataMonth = this.props.loadDataMonth;
@@ -245,7 +249,9 @@ class TimelineScreen extends Component {
 
 		this._timelinePanResponder = panHandler(this);
 		this._swipePanResponder = swipeHandler(this);
-		this._pinchResponder = pinchHandler(this.state.pinch);
+		this._pinchResponder = pinchHandler(this.state.pinch, () =>
+			this.getCurrentDate()
+		);
 	}
 
 	componentDidMount() {
@@ -277,13 +283,20 @@ class TimelineScreen extends Component {
 					<Time time={displayTime} date={displayDate} />
 				</Header>
 				<Content>
-					<View style={{ width }} responder={this._pinchResponder}>
+					<View style={{ width }} {...this._pinchResponder}>
 						<View
 							style={{
 								height: 100,
 								width
 							}}
 							{...this._swipePanResponder.panHandlers}
+						/>
+						<MonthlyTimeline
+							month={this.state.month}
+							scaleY={1}
+							translateX={0}
+							scaleX={1}
+							panHandlers={this._timelinePanResponder.panHandlers}
 						/>
 						<DailyTimeline
 							week={this.state.week}
@@ -344,11 +357,4 @@ const mapStateToProps = state => ({
 
 export default connect(mapStateToProps, mapDispatchToProps)(TimelineScreen);
 /*
-						<MonthlyTimeline
-							month={this.state.month}
-							scaleY={1}
-							translateX={0}
-							scaleX={1}
-							panHandlers={this._timelinePanResponder.panHandlers}
-						/>
 						*/
