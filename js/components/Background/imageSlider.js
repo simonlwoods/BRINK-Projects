@@ -6,13 +6,15 @@ const moment = require("moment");
 
 export default function(animation) {
 	let start;
+	let moving = false;
 
 	return PanResponder.create({
-		onStartShouldSetPanResponder: (evt, gestureState) => true,
-		onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
-		onMoveShouldSetPanResponder: (evt, gestureState) => true,
-		onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
+		onStartShouldSetPanResponder: (evt, gestureState) => !moving,
+		onStartShouldSetPanResponderCapture: (evt, gestureState) => false,
+		onMoveShouldSetPanResponder: (evt, gestureState) => !moving,
+		onMoveShouldSetPanResponderCapture: (evt, gestureState) => false,
 		onPanResponderGrant: (evt, gestureState) => {
+			moving = true;
 			animation.extractOffset();
 			start = moment();
 		},
@@ -25,7 +27,9 @@ export default function(animation) {
 					// coast to a stop
 					velocity: gestureState.vy, // velocity from gesture release
 					toValue: -height
-				}).start();
+				}).start(() => {
+					moving = false;
+				});
 			} else {
 				const end = moment();
 				if (end.diff(start) > 500) {
@@ -33,7 +37,9 @@ export default function(animation) {
 						toValue: 0,
 						easing: Easing.spring,
 						duration: 250
-					}).start();
+					}).start(() => {
+						moving = false;
+					});
 				} else {
 					Animated.sequence([
 						Animated.timing(animation, {
@@ -46,7 +52,9 @@ export default function(animation) {
 							easing: Easing.ease,
 							duration: 250
 						})
-					]).start();
+					]).start(() => {
+						moving = false;
+					});
 				}
 			}
 		},
@@ -55,7 +63,9 @@ export default function(animation) {
 				toValue: 0,
 				easing: Easing.spring,
 				duration: 250
-			}).start();
+			}).start(() => {
+				moving = false;
+			});
 		},
 		onShouldBlockNativeResponder: (evt, gestureState) => true
 	});

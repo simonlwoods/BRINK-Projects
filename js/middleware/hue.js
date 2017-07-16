@@ -113,6 +113,7 @@ const setSchedule = (store, next, addToQueue, action) =>
 		let rebasedTime;
 		for ((time = moment(start)), (i = 0); i < 100; time.add(duration)) {
 			const key = time.format("YYYY-MM-DD");
+			const rebasedTime = moment(time).add(diff, "milliseconds");
 
 			if (!state.data[key]) {
 				yield next({
@@ -128,6 +129,11 @@ const setSchedule = (store, next, addToQueue, action) =>
 			).left(data, time);
 			const dataPoint = data[idx < data.length ? idx : data.length - 1];
 
+			if (i === 0) {
+				console.log(dataPoint);
+				console.log(time, rebasedTime);
+			}
+
 			group.brightness = Math.floor(dataPoint.Y / 65 * 200);
 			if (!group.on && group.brightness == 0) {
 				continue;
@@ -137,7 +143,6 @@ const setSchedule = (store, next, addToQueue, action) =>
 			group.transitionTime = duration.asSeconds();
 			//group.transitionTime = 1;
 
-			const rebasedTime = moment(time).add(diff, "milliseconds");
 			//rebasedTime = moment(rebase).add(i * 2, "seconds");
 
 			const schedule = new client.schedules.Schedule();
@@ -149,8 +154,11 @@ const setSchedule = (store, next, addToQueue, action) =>
 			schedule.action = new client.actions.ChangeGroupAction(group);
 			schedule.autoDelete = true;
 
-			queue(() =>
-				client.schedules.create(schedule).catch(error => console.log(error))
+			queue(
+				() =>
+					(console.log("Created"), client.schedules
+						.create(schedule)
+						.catch(error => console.log(error)))
 			);
 			i++;
 		}
@@ -182,7 +190,10 @@ function makeQueue(next) {
 			return;
 		}
 
-		queue.sort((a, b) => a.action.priority - b.action.priority);
+		queue.sort(
+			(a, b) =>
+				a.action.priority - b.action.priority || a.timestamp - b.timestamp
+		);
 
 		const item = queue.shift();
 		const action = item.action;
@@ -228,7 +239,7 @@ function makeQueue(next) {
 			};
 		});
 
-		queue.push({ action, generator, callback });
+		queue.push({ action, generator, callback, timestamp: Date.now() });
 
 		if (!processing) {
 			processing = true;

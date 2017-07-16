@@ -97,7 +97,7 @@ class App extends React.Component {
 					loading: false
 				});
 			});
-		}).purge(["data", "graph"]);
+		}).purge(["settings", "data", "graph"]);
 	}
 	render() {
 		return (

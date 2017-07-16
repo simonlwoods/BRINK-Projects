@@ -108,7 +108,7 @@ class TimelineScreen extends Component {
 
 		this.requestData();
 
-		const rebase = moment();
+		const rebase = moment().add(1, "minutes");
 		props.setSchedule(currentTime, rebase, "weekly");
 
 		this.lastRequest = new Date(0);

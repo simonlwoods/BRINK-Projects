@@ -56,7 +56,7 @@ class Home extends Component {
 					<Text>Ready to be transported to a far away land?</Text>
 					<Button
 						style={{ width: 100 }}
-						onPress={() => (this.huejayOn(), this.props.navigateNext())}
+						onPress={() => /*this.huejayOn(),*/ this.props.navigateNext()}
 					>
 						{"ON"}
 					</Button>

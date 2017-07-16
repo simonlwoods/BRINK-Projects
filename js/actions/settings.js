@@ -1,6 +1,7 @@
-export function settingsPurge(value) {
+export function settingsChange(setting, value) {
 	return {
-		type: "SETTINGS_PURGE",
+		type: "SETTINGS_CHANGE",
+		setting,
 		value
 	};
 }
