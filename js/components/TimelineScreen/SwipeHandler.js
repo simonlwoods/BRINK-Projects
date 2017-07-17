@@ -1,5 +1,7 @@
 import { Animated, PanResponder, InteractionManager } from "react-native";
 
+const moment = require("moment");
+
 export default function(timelinescreen) {
 	let interacting = false;
 	const startInteraction = () => {
@@ -32,8 +34,30 @@ export default function(timelinescreen) {
 		onPanResponderRelease: (evt, gestureState) => {
 			timelinescreen.props.interaction(false);
 
+			let canNext, canPrevious;
+			switch (timelinescreen.state.active) {
+				case "yearly":
+					canNext = false;
+					canPrevious = false;
+					break;
+				case "monthly":
+					canNext = moment(timelinescreen.state.currentDate).month() < 11;
+					canPrevious = moment(timelinescreen.state.currentDate).month() > 0;
+					break;
+				case "daily":
+					canNext = moment(timelinescreen.state.currentDate).isBefore(
+						moment("2007-12-31")
+					);
+					canPrevious = moment(timelinescreen.state.currentDate).isAfter(
+						moment("2007-01-01")
+					);
+					break;
+			}
+
+			console.log(canNext, canPrevious);
+
 			// Swipe to next day
-			if (gestureState.dx < -(timelinescreen.state.width / 3)) {
+			if (canNext && gestureState.dx < -(timelinescreen.state.width / 3)) {
 				Animated.spring(timelinescreen.state.swipe, {
 					toValue: -timelinescreen.state.width
 				}).start(() => timelinescreen.next());
@@ -41,7 +65,10 @@ export default function(timelinescreen) {
 					finishInteraction();
 				}, 250);
 				// Swipe to previous day
-			} else if (gestureState.dx > timelinescreen.state.width / 3) {
+			} else if (
+				canPrevious &&
+				gestureState.dx > timelinescreen.state.width / 3
+			) {
 				Animated.spring(timelinescreen.state.swipe, {
 					toValue: timelinescreen.state.width
 				}).start(() => timelinescreen.previous());

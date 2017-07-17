@@ -17,11 +17,21 @@ class Graph extends Component {
 		const { width } = props.graph.params;
 		const widthValue = new Animated.Value(width);
 
+		const monthOffset = new Animated.Value(0);
+
+		/*
+		const translateX = Animated.multiply(
+			Animated.multiply(monthOffset, widthValue),
+			props.scaleX
+		);
+		*/
+
 		const translateX = new Animated.Value(0);
 
 		this.state = {
 			touch,
 			widthValue,
+			monthOffset,
 			translateX
 		};
 	}
@@ -77,10 +87,8 @@ class Graph extends Component {
 	}
 
 	shouldComponentUpdate(newProps) {
-		return true;
-
 		const { width, height } = this.props.graph.params;
-		const { newWidth, newHeight } = newProps.graph.params;
+		const { width: newWidth, height: newHeight } = newProps.graph.params;
 
 		if (width != newWidth || height != newHeight) return true;
 		if (newProps.month !== this.props.month) return true;
@@ -101,6 +109,8 @@ class Graph extends Component {
 	}
 
 	render() {
+		console.log("Render");
+
 		const { width, height, spacing } = this.props.graph.params;
 
 		const lastMonthGraph = this.props.graph["month" + (this.props.month - 1)];
@@ -110,7 +120,7 @@ class Graph extends Component {
 		return (
 			<Animated.View
 				style={{
-					width: width,
+					width: width * 3,
 					alignSelf: "center",
 					transform: [
 						{ translateX: this.state.translateX },
@@ -119,12 +129,28 @@ class Graph extends Component {
 				}}
 				{...this._touchResponder.panHandlers}
 			>
-				<Svg height={height} width={width}>
+				<Svg height={height} width={width * 3}>
+					{lastMonthGraph
+						? <BarGraph
+								key={"month" + (this.props.month - 1)}
+								x={0}
+								data={lastMonthGraph.dBar}
+								fill={true}
+							/>
+						: null}
 					{graph
 						? <BarGraph
 								key="month{this.props.month}"
-								x={0}
+								x={width}
 								data={graph.dBar}
+								fill={true}
+							/>
+						: null}
+					{nextMonthGraph
+						? <BarGraph
+								key={"month" + (this.props.month + 1)}
+								x={width * 2}
+								data={nextMonthGraph.dBar}
 								fill={true}
 							/>
 						: null}

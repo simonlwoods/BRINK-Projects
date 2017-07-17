@@ -102,11 +102,11 @@ class Timeline extends Component {
 
 			if (week !== this.state.week) {
 				co(function*() {
-					yield this.props.loadDataWeek(week, true);
-					yield this.props.loadDataWeek(week + 1, true);
-					yield this.props.loadDataWeek(week - 1, true);
-					yield this.props.loadDataWeek(week + 2, true);
-					yield this.props.loadDataWeek(week - 2, true);
+					yield nextProps.loadDataWeek(week, true);
+					yield nextProps.loadDataWeek(week + 1, true);
+					yield nextProps.loadDataWeek(week - 1, true);
+					yield nextProps.loadDataWeek(week + 2, true);
+					yield nextProps.loadDataWeek(week - 2, true);
 				});
 				this.setState({ week });
 			}

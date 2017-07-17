@@ -110,27 +110,43 @@ class TimelineScreen extends Component {
 	}
 
 	setDate(date) {
-		const { width } = this.props.graph.params;
-
-		this.state.swipe.setValue(0);
-
 		const currentDate = moment(date);
 		this.setState({ currentDate });
+
+		this.state.swipe.setValue(0);
 	}
 
 	next() {
 		const newDate = moment(this.state.currentDate);
-		newDate.add(1, "days");
+		let unit;
+		switch (this.state.active) {
+			case "monthly":
+				newDate.add(1, "month");
+				break;
+			case "daily":
+				newDate.add(1, "days");
+				break;
+		}
+
 		this.setDate(newDate);
 	}
 
 	previous() {
 		const newDate = moment(this.state.currentDate);
-		newDate.subtract(1, "days");
+		switch (this.state.active) {
+			case "monthly":
+				newDate.subtract(1, "month");
+				break;
+			case "daily":
+				newDate.subtract(1, "days");
+				break;
+		}
 		this.setDate(newDate);
 	}
 
 	dataTouch(data) {
+		if (!data.timestamp) return;
+
 		this.setState({
 			currentTime: moment(data.timestamp)
 		});
@@ -204,7 +220,8 @@ class TimelineScreen extends Component {
 								style={{
 									opacity: this.state.monthOpacity,
 									position: "absolute",
-									top: 0
+									top: 0,
+									width
 								}}
 							>
 								<MonthlyTimeline
@@ -219,7 +236,8 @@ class TimelineScreen extends Component {
 								style={{
 									opacity: this.state.dayOpacity,
 									position: "absolute",
-									top: 0
+									top: 0,
+									width
 								}}
 							>
 								<DailyTimeline

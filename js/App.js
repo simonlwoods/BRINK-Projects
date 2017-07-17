@@ -101,6 +101,10 @@ class App extends React.Component {
 				yield store.dispatch(loadDataWeek(week - 1, true));
 				yield store.dispatch(loadDataMonth(month + 1, true));
 				yield store.dispatch(loadDataMonth(month - 1, true));
+				yield store.dispatch(loadDataWeek(week + 2, true));
+				yield store.dispatch(loadDataWeek(week - 2, true));
+				yield store.dispatch(loadDataMonth(month + 2, true));
+				yield store.dispatch(loadDataMonth(month - 2, true));
 			}).then(() => {
 				this.setState({
 					loading: false

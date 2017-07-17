@@ -22,7 +22,13 @@ class Timeline extends Component {
 			scaleX: new Animated.Value(1)
 		};
 
-		props.loadDataMonth(month, true);
+		co(function*() {
+			yield props.loadDataMonth(month, true);
+			yield props.loadDataMonth(month + 1, true);
+			yield props.loadDataMonth(month - 1, true);
+			yield props.loadDataMonth(month + 2, true);
+			yield props.loadDataMonth(month - 2, true);
+		});
 
 		this._pinchHandler = PinchHandler(this.state.scaleX, () =>
 			this.zoomToDate()
@@ -33,12 +39,14 @@ class Timeline extends Component {
 		const days = moment(this.props.date).daysInMonth();
 		const date = moment(this.props.date).date();
 
+		const ides = days / 2;
+
 		Animated.parallel([
 			Animated.spring(this.state.scaleX, {
 				toValue: days
 			}),
 			Animated.spring(this.state.monthOffset, {
-				toValue: -date
+				toValue: ides - date
 			})
 		]).start();
 
@@ -72,11 +80,11 @@ class Timeline extends Component {
 
 			if (month !== this.state.month) {
 				co(function*() {
-					yield this.props.loadDataMonth(month, true);
-					yield this.props.loadDataMonth(month + 1, true);
-					yield this.props.loadDataMonth(month - 1, true);
-					yield this.props.loadDataMonth(month + 2, true);
-					yield this.props.loadDataMonth(month - 2, true);
+					yield nextProps.loadDataMonth(month, true);
+					yield nextProps.loadDataMonth(month + 1, true);
+					yield nextProps.loadDataMonth(month - 1, true);
+					yield nextProps.loadDataMonth(month + 2, true);
+					yield nextProps.loadDataMonth(month - 2, true);
 				});
 				this.setState({ month });
 			}

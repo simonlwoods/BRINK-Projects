@@ -87,7 +87,9 @@ const draw = (store, next, action) => {
 	const x = scaleTime().domain(xExtent).range([0, fullWidth]);
 	const y = scaleLinear().domain(yExtent).range([0, height]);
 
-	const processedData = data.map(d => ({
+	const filter = action.noGaps ? 30 : 3;
+
+	const processedData = data.filter((d, i) => !(i % filter)).map(d => ({
 		...d,
 		xValue: Math.round(2 * x(d.timestamp)) / 2
 	}));
