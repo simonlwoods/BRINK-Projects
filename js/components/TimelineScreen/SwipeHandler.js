@@ -3,7 +3,7 @@ import { Animated, PanResponder, InteractionManager } from "react-native";
 export default function(timelinescreen) {
 	let interacting = false;
 	const startInteraction = () => {
-		timelinescreen.interacting(true);
+		timelinescreen.props.interaction(true);
 		interacting = true;
 	};
 	const finishInteraction = () => {
@@ -30,25 +30,23 @@ export default function(timelinescreen) {
 		onPanResponderTerminationRequest: (evt, gestureState) => true,
 
 		onPanResponderRelease: (evt, gestureState) => {
-			timelinescreen.interacting(false);
+			timelinescreen.props.interaction(false);
 
 			// Swipe to next day
 			if (gestureState.dx < -(timelinescreen.state.width / 3)) {
 				Animated.spring(timelinescreen.state.swipe, {
 					toValue: -timelinescreen.state.width
-				}).start();
+				}).start(() => timelinescreen.next());
 				setTimeout(() => {
 					finishInteraction();
-					timelinescreen.next();
 				}, 250);
 				// Swipe to previous day
 			} else if (gestureState.dx > timelinescreen.state.width / 3) {
 				Animated.spring(timelinescreen.state.swipe, {
 					toValue: timelinescreen.state.width
-				}).start();
+				}).start(() => timelinescreen.previous());
 				setTimeout(() => {
 					finishInteraction();
-					timelinescreen.previous();
 				}, 250);
 				// Spring back to same day
 			} else {
@@ -62,7 +60,7 @@ export default function(timelinescreen) {
 		},
 
 		onPanResponderTerminate: (evt, gestureState) => {
-			timelinescreen.interacting(false);
+			timelinescreen.props.interaction(false);
 			finishInteraction();
 		},
 

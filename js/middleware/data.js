@@ -71,7 +71,7 @@ function dataMonthLoad(store, next, action) {
 	const jan1st = moment("2007-01-01");
 	action.start = moment(jan1st).month(action.month);
 	console.log(action.start.format("YYYY-MM-DD"));
-	action.end = moment(jan1st).month(action.month + 1).date(-1);
+	action.end = moment(jan1st).month(action.month + 1).subtract(1, "days");
 	console.log(action.end.format("YYYY-MM-DD"));
 	return dataRangeLoad(store, next, action);
 }

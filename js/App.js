@@ -25,10 +25,11 @@ import SplashScreen from "./components/SplashScreen";
 import Settings from "./components/Settings";
 import baseTheme from "./themes/base-theme.js";
 
-import { loadDataWeek } from "./actions/data";
+import { loadDataWeek, loadDataMonth } from "./actions/data";
 import { setParams } from "./actions/graph";
 
 const moment = require("moment");
+const co = require("co");
 
 const navReducer = (state, action) => {
 	const newState = AppNavigator.router.getStateForAction(action, state);
@@ -89,10 +90,18 @@ class App extends React.Component {
 			const { width } = Dimensions.get("window");
 			store.dispatch(setParams(width, 225, 3));
 
-			const currentDate = moment("2007-11-10");
+			const currentDate = moment().year(2007).month(7).date(20);
 			const week = Math.floor(currentDate.dayOfYear() / 7);
+			const month = currentDate.month();
 
-			store.dispatch(loadDataWeek(week)).then(() => {
+			co(function*() {
+				yield store.dispatch(loadDataMonth(month, true));
+				yield store.dispatch(loadDataWeek(week, true));
+				yield store.dispatch(loadDataWeek(week + 1, true));
+				yield store.dispatch(loadDataWeek(week - 1, true));
+				yield store.dispatch(loadDataMonth(month + 1, true));
+				yield store.dispatch(loadDataMonth(month - 1, true));
+			}).then(() => {
 				this.setState({
 					loading: false
 				});

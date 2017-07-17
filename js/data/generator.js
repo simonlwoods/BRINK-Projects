@@ -6,7 +6,8 @@ export default function(date) {
 
 	let data = "timestamp,Y,x,y\n";
 	for (let timestamp = start; timestamp < end; timestamp += 180) {
-		data += `${timestamp},${Math.random() * 10},${0.3051},${0.3192}\n`;
+		//data += `${timestamp},${Math.random() * 10},${0.3051},${0.3192}\n`;
+		data += `${timestamp},0,${0.3051},${0.3192}\n`;
 	}
 	return data;
 }

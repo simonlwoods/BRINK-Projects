@@ -55,9 +55,12 @@ const setLights = (state, color) =>
 		const client = getClient(state.bridges.current);
 		const lights = yield client.lights.getAll();
 		for (let light of lights) {
-			light.brightness = Math.floor(color.Y / 65 * 200);
-			light.on = light.brightness > 0;
-			light.xy = color.xy;
+			const brightness = Math.floor(color.Y / 65 * 200);
+			light.on = brightness > 0;
+			if (light.on) {
+				light.brightness = brightness;
+				light.xy = color.xy;
+			}
 			light.transitionTime = 0.1;
 			yield client.lights.save(light);
 		}
@@ -113,7 +116,7 @@ const setSchedule = (store, next, addToQueue, action) =>
 		let rebasedTime;
 		for ((time = moment(start)), (i = 0); i < 100; time.add(duration)) {
 			const key = time.format("YYYY-MM-DD");
-			const rebasedTime = moment(time).add(diff, "milliseconds");
+			rebasedTime = moment(time).add(diff, "milliseconds");
 
 			if (!state.data[key]) {
 				yield next({
@@ -128,11 +131,6 @@ const setSchedule = (store, next, addToQueue, action) =>
 				moment(d.timestamp).diff(moment(x), "minutes")
 			).left(data, time);
 			const dataPoint = data[idx < data.length ? idx : data.length - 1];
-
-			if (i === 0) {
-				console.log(dataPoint);
-				console.log(time, rebasedTime);
-			}
 
 			group.brightness = Math.floor(dataPoint.Y / 65 * 200);
 			if (!group.on && group.brightness == 0) {
@@ -154,11 +152,8 @@ const setSchedule = (store, next, addToQueue, action) =>
 			schedule.action = new client.actions.ChangeGroupAction(group);
 			schedule.autoDelete = true;
 
-			queue(
-				() =>
-					(console.log("Created"), client.schedules
-						.create(schedule)
-						.catch(error => console.log(error)))
+			queue(() =>
+				client.schedules.create(schedule).catch(error => console.log(error))
 			);
 			i++;
 		}

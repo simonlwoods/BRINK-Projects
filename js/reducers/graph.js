@@ -1,4 +1,5 @@
 const initialState = {
+	interaction: false,
 	params: {
 		width: 0,
 		height: 0,
@@ -8,6 +9,11 @@ const initialState = {
 
 export default function(state = initialState, action) {
 	switch (action.type) {
+		case "GRAPH_INTERACTION":
+			return {
+				...state,
+				interaction: action.value
+			};
 		case "GRAPH_SET_BAR_GRAPH":
 			return {
 				...state,

@@ -32,3 +32,10 @@ export function unloadGraph(id) {
 		id
 	};
 }
+
+export function interaction(value) {
+	return {
+		type: "GRAPH_INTERACTION",
+		value
+	};
+}
