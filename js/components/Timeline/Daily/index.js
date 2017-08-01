@@ -36,10 +36,6 @@ class Timeline extends Component {
 
 		this.setDate(props.date);
 
-		this._pinchHandler = PinchHandler(this.state.scaleX, () =>
-			this.zoomToMonth()
-		);
-
 		co(function*() {
 			yield props.loadDataWeek(week, true);
 			yield props.loadDataWeek(week + 1, true);
@@ -47,8 +43,8 @@ class Timeline extends Component {
 		});
 	}
 
-	getPinchHandler() {
-		return this._pinchHandler;
+	getScale() {
+		return this.state.scaleX;
 	}
 
 	setDate(date) {
@@ -58,7 +54,7 @@ class Timeline extends Component {
 		this.state.dayOfWeek.setValue(dayOfWeek);
 	}
 
-	zoomToMonth() {
+	zoomToMonth(callback) {
 		const days = moment(this.props.date).daysInMonth();
 		const date = moment(this.props.date).date();
 
@@ -73,11 +69,11 @@ class Timeline extends Component {
 				toValue: diff
 			})
 		]).start(() => {
-			this.props.dayToMonth();
 			setTimeout(() => {
 				this.state.scaleX.setValue(1);
 				this.state.monthOffset.setValue(0);
 			}, 200);
+			callback();
 		});
 	}
 

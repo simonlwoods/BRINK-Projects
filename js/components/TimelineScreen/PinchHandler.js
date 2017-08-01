@@ -1,56 +1,40 @@
 import { Animated } from "react-native";
 
-function getDistance(evt) {
-	if (evt.nativeEvent.touches.length !== 2) return 0;
+import { createResponder } from "react-native-gesture-responder";
 
-	const touch1 = evt.nativeEvent.touches[0];
-	const touch2 = evt.nativeEvent.touches[1];
-
-	const x = touch1.pageX - touch2.pageX;
-	const y = touch1.pageY - touch2.pageY;
-
-	return Math.sqrt(x * x + y * y);
-}
-
-export default function(animatedValue, getCurrentDate) {
-	let startDistance = 0;
-	let lastValue = 0;
-	return {
-		onStartShouldSetResponder: evt => evt.nativeEvent.touches.length == 2,
-		onStartShouldSetResponderCapture: evt =>
+export default function(timelineScreen) {
+	let pinchBasis = 0;
+	let lastPinch = 0;
+	return createResponder({
+		onStartShouldSetResponder: (evt, gestureState) =>
 			evt.nativeEvent.touches.length == 2,
-		onMoveShouldSetResponder: evt => evt.nativeEvent.touches.length == 2,
-		onMoveShouldSetResponderCapture: evt => evt.nativeEvent.touches.length == 2,
-		onResponderGrant: evt => {
-			startDistance = getDistance(evt);
-			animatedValue.setValue(1);
+		onStartShouldSetResponderCapture: (evt, gestureState) => false,
+		onMoveShouldSetResponder: (evt, gestureState) =>
+			evt.nativeEvent.touches.length == 2,
+		onMoveShouldSetResponderCapture: (evt, gestureState) => false,
+		onResponderGrant: (evt, gestureState) => {
+			pinchBasis = 0;
+			timelineScreen.resetPinch();
+			timelineScreen.interaction(true);
 		},
-		onResponderMove: evt => {
-			const distance = getDistance(evt);
-			const value = Math.max(
-				0.075,
-				Math.min(4, Math.pow(distance / startDistance, 2))
-			);
-			lastValue = value;
-			animatedValue.setValue(value);
-		},
-		onResponderTerminationRequest: evt => true,
-		onResponderRelease: evt => {
-			if (lastValue <= 0.2) {
-				const days = getCurrentDate().daysInMonth();
-				Animated.spring(animatedValue, {
-					toValue: 1 / days
-				}).start();
-			} else {
-				// Spring back to same day
-				Animated.spring(animatedValue, {
-					toValue: 1
-				}).start();
+		onResponderMove: (evt, gestureState) => {
+			if (gestureState.pinch && !pinchBasis) pinchBasis;
+			if (gestureState.pinch) {
+				if (!pinchBasis) pinchBasis = gestureState.pinch;
+				lastPinch = gestureState.pinch / pinchBasis;
+				timelineScreen.pinchMove(lastPinch);
 			}
+			timelineScreen.swipeMove(gestureState.dx);
 		},
-		onResponderTerminate: evt => {},
-		onShouldBlockNativeResponder: evt => {
-			return true;
-		}
-	};
+		onResponderTerminationRequest: (evt, gestureState) => true,
+		onResponderRelease: (evt, gestureState) => {
+			timelineScreen.pinchRelease(lastPinch);
+			timelineScreen.swipeRelease(gestureState.dx, gestureState.vx);
+			timelineScreen.interaction(false);
+		},
+		onResponderTerminate: (evt, gestureState) => {},
+		onResponderSingleTapConfirmed: (evt, gestureState) => {},
+		moveThreshold: 2,
+		debug: false
+	});
 }

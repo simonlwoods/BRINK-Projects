@@ -71,7 +71,11 @@ class Graph extends Component {
 
 		const { width } = this.props.graph.params;
 
-		const x = value - 7 * width;
+		const x = value - 8 * width;
+
+		console.log("Touch daily");
+		console.log(value, x);
+
 		const data = this.props.graph["week" + this.props.week].dataForXValue(x);
 
 		this.props.dataTouch(data);
@@ -112,6 +116,7 @@ class Graph extends Component {
 	}
 
 	render() {
+		console.log("Render graph");
 		const lastWeekGraph = this.props.graph["week" + (this.props.week - 1)];
 		const graph = this.props.graph["week" + this.props.week];
 		const nextWeekGraph = this.props.graph["week" + (this.props.week + 1)];

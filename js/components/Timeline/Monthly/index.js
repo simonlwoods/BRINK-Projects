@@ -29,13 +29,13 @@ class Timeline extends Component {
 			yield props.loadDataMonth(month + 2, true);
 			yield props.loadDataMonth(month - 2, true);
 		});
-
-		this._pinchHandler = PinchHandler(this.state.scaleX, () =>
-			this.zoomToDate()
-		);
 	}
 
-	zoomToDate() {
+	getScale() {
+		return this.state.scaleX;
+	}
+
+	zoomToDate(callback) {
 		const days = moment(this.props.date).daysInMonth();
 		const date = moment(this.props.date).date();
 
@@ -51,11 +51,11 @@ class Timeline extends Component {
 		]).start();
 
 		setTimeout(() => {
-			this.props.monthToDay();
 			setTimeout(() => {
 				this.state.scaleX.setValue(1);
 				this.state.monthOffset.setValue(0);
 			}, 200);
+			callback();
 		}, 300);
 	}
 

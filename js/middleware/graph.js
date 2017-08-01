@@ -97,14 +97,19 @@ const draw = (store, next, action) => {
 	const dBar = bar(processedData, x, y, spacing, !action.noGaps);
 	const dLine = line(processedData, x, y);
 
+	const dataBisector = bisector(d => d.xValue);
+
 	return next({
 		type: "GRAPH_SET_BAR_GRAPH",
 		id: action.id,
 		dBar,
 		dLine,
 		dCount: keys.length,
-		dataForXValue: xValue =>
-			data[bisector(d => d.xValue).left(processedData, xValue)]
+		dataForXValue: xValue => {
+			console.log(xValue, dataBisector.left(processedData, xValue));
+			console.log(processedData[dataBisector.left(processedData, xValue)]);
+			return processedData[dataBisector.left(processedData, xValue)];
+		}
 	});
 };
 

@@ -78,10 +78,10 @@ class Graph extends Component {
 
 		const { width } = this.props.graph.params;
 
-		const x = value; // - 7 * width;
+		const x = value - width;
 		const data = this.props.graph["month" + this.props.month].dataForXValue(x);
 
-		console.log(data);
+		console.log("Touch monthly");
 
 		this.props.dataTouch(data);
 	}
@@ -109,7 +109,7 @@ class Graph extends Component {
 	}
 
 	render() {
-		console.log("Render");
+		console.log("Render graph");
 
 		const { width, height, spacing } = this.props.graph.params;
 
