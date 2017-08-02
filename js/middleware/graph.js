@@ -76,8 +76,7 @@ const draw = (store, next, action) => {
 			return 0;
 		});
 
-	console.log(keys);
-	const data = keys.reduce((data, d) => data.concat(allData[d]), []);
+	let data = keys.reduce((data, d) => data.concat(allData[d]), []);
 
 	const xExtent = extent(data, d => d.timestamp);
 	const yExtent = [-65, 65];
@@ -87,12 +86,46 @@ const draw = (store, next, action) => {
 	const x = scaleTime().domain(xExtent).range([0, fullWidth]);
 	const y = scaleLinear().domain(yExtent).range([0, height]);
 
-	const filter = action.noGaps ? 30 : 3;
+	console.log(action.id);
+	const filter = 1; //action.noGaps ? 30 : 3;
+
+	if (!action.id.indexOf("month")) {
+		data = data.reduce((result, d, i) => {
+			const d1 = { ...d };
+			if (!result.length) {
+				return [d1];
+			}
+			if (
+				moment(d.timestamp).isAfter(
+					moment(result[result.length - 1].timestamp).add(1.125, "hours")
+				)
+			) {
+				result[result.length - 1].Y = Math.max(
+					0.5,
+					result[result.length - 1].Y
+				);
+				d1.n = 1;
+				result.push(d1);
+			} else {
+				const average = result[result.length - 1];
+				average.Y = (average.Y * average.n + d1.Y) / (average.n + 1);
+				average.x = (average.x * average.n + d1.x) / (average.n + 1);
+				average.y = (average.y * average.n + d1.y) / (average.n + 1);
+				average.n = average.n + 1;
+				result[result.length - 1] = average;
+			}
+			return result;
+		}, []);
+	}
 
 	const processedData = data.filter((d, i) => !(i % filter)).map(d => ({
 		...d,
 		xValue: Math.round(2 * x(d.timestamp)) / 2
 	}));
+
+	if (!action.id.indexOf("month")) {
+		console.log(processedData);
+	}
 
 	const dBar = bar(processedData, x, y, spacing, !action.noGaps);
 	const dLine = line(processedData, x, y);
@@ -105,11 +138,8 @@ const draw = (store, next, action) => {
 		dBar,
 		dLine,
 		dCount: keys.length,
-		dataForXValue: xValue => {
-			console.log(xValue, dataBisector.left(processedData, xValue));
-			console.log(processedData[dataBisector.left(processedData, xValue)]);
-			return processedData[dataBisector.left(processedData, xValue)];
-		}
+		dataForXValue: xValue =>
+			processedData[dataBisector.left(processedData, xValue)]
 	});
 };
 

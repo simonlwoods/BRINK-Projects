@@ -135,7 +135,6 @@ class Graph extends Component {
 								key={"month" + (this.props.month - 1)}
 								x={0}
 								data={lastMonthGraph.dBar}
-								fill={true}
 							/>
 						: null}
 					{graph
@@ -143,7 +142,6 @@ class Graph extends Component {
 								key="month{this.props.month}"
 								x={width}
 								data={graph.dBar}
-								fill={true}
 							/>
 						: null}
 					{nextMonthGraph
@@ -151,7 +149,6 @@ class Graph extends Component {
 								key={"month" + (this.props.month + 1)}
 								x={width * 2}
 								data={nextMonthGraph.dBar}
-								fill={true}
 							/>
 						: null}
 				</Svg>

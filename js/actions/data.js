@@ -31,7 +31,7 @@ export function loadDataMonth(no, draw = false) {
 		id: "month" + no,
 		month: no,
 		width: 1,
-		noGaps: true,
+		noGaps: false, //true,
 		draw
 	};
 }
