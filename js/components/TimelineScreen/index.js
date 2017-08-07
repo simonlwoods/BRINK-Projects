@@ -13,13 +13,13 @@ import {
 } from "./../../components";
 
 import Time from "./../Time";
-import DailyTimeline from "./../Timeline/Daily";
+import DailyTimeline from "./../Timeline/NewDaily";
 import MonthlyTimeline from "./../Timeline/Monthly";
 
 import ImageSlider from "./../Background/imageSlider";
 
 import { setLights, setSchedule } from "./../../actions/bridge";
-import { interaction, setParams } from "./../../actions/graph";
+import { interaction, swiping, setParams } from "./../../actions/graph";
 
 import pinchHandler from "./PinchHandler";
 
@@ -116,6 +116,7 @@ class TimelineScreen extends Component {
 		this.setState({ currentDate });
 
 		this.state.swipe.setValue(0);
+		this.props.swiping(false);
 	}
 
 	next() {
@@ -164,6 +165,8 @@ class TimelineScreen extends Component {
 
 	resetPinch() {
 		this.pinchMove(1);
+		this.props.interaction(true);
+		this.props.swiping(true);
 	}
 
 	pinchMove(value) {
@@ -178,6 +181,8 @@ class TimelineScreen extends Component {
 	}
 
 	pinchRelease(value) {
+		this.props.interaction(false);
+		console.log(value);
 		switch (this.state.active) {
 			case "daily":
 				if (value <= 0.5) {
@@ -239,19 +244,19 @@ class TimelineScreen extends Component {
 	swipeRelease(value) {
 		// Swipe to next day
 		if (this.canNext() && value < -(this.state.width / 3)) {
-			Animated.spring(this.state.swipe, {
+			Animated.timing(this.state.swipe, {
 				toValue: -this.state.width
 			}).start(() => this.next());
 			// Swipe to previous day
 		} else if (this.canPrevious() && value > this.state.width / 3) {
-			Animated.spring(this.state.swipe, {
+			Animated.timing(this.state.swipe, {
 				toValue: this.state.width
 			}).start(() => this.previous());
 			// Spring back to same day
 		} else {
 			Animated.spring(this.state.swipe, {
 				toValue: 0
-			}).start();
+			}).start(() => this.props.swiping(false));
 		}
 	}
 
@@ -263,7 +268,7 @@ class TimelineScreen extends Component {
 		if (newProps.graph.interaction !== this.props.graph.interaction) {
 			Animated.timing(this.state.interacting, {
 				toValue: newProps.graph.interaction ? 1 : 0,
-				duration: 150
+				duration: 100
 			}).start();
 		}
 	}
@@ -382,6 +387,7 @@ const mapDispatchToProps = {
 	setLights,
 	setSchedule,
 	interaction,
+	swiping,
 	setGraphParams: setParams
 };
 

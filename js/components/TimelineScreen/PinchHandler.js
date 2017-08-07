@@ -7,15 +7,16 @@ export default function(timelineScreen) {
 	let lastPinch = 0;
 	return createResponder({
 		onStartShouldSetResponder: (evt, gestureState) =>
+			!timelineScreen.props.graph.swiping &&
 			evt.nativeEvent.touches.length == 2,
 		onStartShouldSetResponderCapture: (evt, gestureState) => false,
 		onMoveShouldSetResponder: (evt, gestureState) =>
+			!timelineScreen.props.graph.swiping &&
 			evt.nativeEvent.touches.length == 2,
 		onMoveShouldSetResponderCapture: (evt, gestureState) => false,
 		onResponderGrant: (evt, gestureState) => {
 			pinchBasis = 0;
 			timelineScreen.resetPinch();
-			timelineScreen.interaction(true);
 		},
 		onResponderMove: (evt, gestureState) => {
 			if (gestureState.pinch && !pinchBasis) pinchBasis;
@@ -30,7 +31,6 @@ export default function(timelineScreen) {
 		onResponderRelease: (evt, gestureState) => {
 			timelineScreen.pinchRelease(lastPinch);
 			timelineScreen.swipeRelease(gestureState.dx, gestureState.vx);
-			timelineScreen.interaction(false);
 		},
 		onResponderTerminate: (evt, gestureState) => {},
 		onResponderSingleTapConfirmed: (evt, gestureState) => {},

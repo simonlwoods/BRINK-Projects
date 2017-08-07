@@ -60,15 +60,9 @@ function dataRangeLoad(store, next, action) {
 	});
 }
 
-function dataWeekLoad(store, next, action) {
-	const jan1st = moment("2007-01-01");
-	action.start = moment(jan1st).add(action.week, "weeks");
-	action.end = moment(action.start).add(6, "days");
-	return dataRangeLoad(store, next, action);
-}
-
 function dataMonthLoad(store, next, action) {
 	const jan1st = moment("2007-01-01");
+	action.id = "month" + action.month;
 	action.start = moment(jan1st).month(action.month);
 	console.log(action.start.format("YYYY-MM-DD"));
 	action.end = moment(jan1st).month(action.month + 1).subtract(1, "days");

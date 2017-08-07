@@ -8,6 +8,8 @@ import { BarGraph, LineGraph } from "./../../../data/graph";
 
 import { interaction } from "./../../../actions/graph";
 
+const moment = require("moment");
+
 class Graph extends Component {
 	constructor(props) {
 		super(props);
@@ -17,15 +19,8 @@ class Graph extends Component {
 		const { width } = props.graph.params;
 		const widthValue = new Animated.Value(width);
 
-		const month = new Animated.Value(props.month);
-
-		const monthOffset = Animated.add(
-			new Animated.Value(5.5),
-			Animated.multiply(month, new Animated.Value(-1))
-		);
-
 		const translateX = Animated.multiply(
-			Animated.multiply(monthOffset, widthValue),
+			Animated.multiply(props.dayOffset, widthValue),
 			props.scaleX
 		);
 
@@ -34,8 +29,6 @@ class Graph extends Component {
 		this.state = {
 			touch,
 			widthValue,
-			month,
-			monthOffset,
 			translateX
 		};
 	}
@@ -78,17 +71,22 @@ class Graph extends Component {
 	}
 
 	touchCallback({ value }) {
-		if (!this.props.graph["month" + this.props.month]) return;
+		const month = moment(this.props.date).month();
+		const thisMonth = this.props.graph["month" + month];
+		if (!thisMonth) {
+			return;
+		}
 
 		const { width } = this.props.graph.params;
 
-		const x = value - width * this.props.month;
-		const data = this.props.graph[
-			"month" + this.props.month
-		].monthGraph.dataForXValue(x);
+		const dayOffset =
+			moment(`2007-${month + 1}-01`, "YYYY-M-DD").dayOfYear() - 1;
+		const x = value - width * dayOffset;
 
-		console.log("Touch monthly");
+		console.log("Touch daily");
 		console.log(value, x);
+
+		const data = thisMonth.dayGraph.dataForXValue(x);
 
 		this.props.dataTouch(data);
 	}
@@ -107,12 +105,8 @@ class Graph extends Component {
 		return false;
 	}
 
-	componentWillReceiveProps(newProps) {
-		this.state.month.setValue(newProps.month);
-	}
-
 	render() {
-		console.log("Render monthly graph");
+		console.log("Render graph");
 
 		const { width, height, spacing } = this.props.graph.params;
 
@@ -120,7 +114,7 @@ class Graph extends Component {
 			<View style={{ height, width, position: "relative" }}>
 				<Animated.View
 					style={{
-						width: width * 12,
+						width: width * 365,
 						alignSelf: "center",
 						transform: [
 							{ translateX: this.state.translateX },
@@ -129,16 +123,23 @@ class Graph extends Component {
 					}}
 					{...this._touchResponder.panHandlers}
 				>
-					<View style={{ width: width * 12, alignSelf: "center" }}>
-						<Svg height={height} width={width * 12}>
+					<View
+						style={{
+							width: width * 365,
+							alignSelf: "center"
+						}}
+					>
+						<Svg height={height} width={width * 365}>
 							{Array.from(new Array(12), (x, i) => i)
 								.map((x, i) => {
 									const graph = this.props.graph["month" + i];
+									const day =
+										moment(`2007-${i + 1}-01`, "YYYY-M-DD").dayOfYear() - 1;
 									return graph
 										? <BarGraph
-												key={"month" + i + "_monthbar"}
-												x={width * i}
-												data={graph.monthGraph.dBar}
+												key={`month${i}_bar`}
+												x={width * day}
+												data={graph.dayGraph.dBar}
 											/>
 										: null;
 								})
@@ -150,7 +151,7 @@ class Graph extends Component {
 							position: "absolute",
 							top: 0,
 							opacity: this.props.interacting,
-							width: width * 12,
+							width: width * 365,
 							alignSelf: "center"
 						}}
 					>
@@ -158,13 +159,19 @@ class Graph extends Component {
 							{Array.from(new Array(12), (x, i) => i)
 								.map((x, i) => {
 									const graph = this.props.graph["month" + i];
+									const days = moment(
+										`2007-${i + 1}-01`,
+										"YYYY-M-DD"
+									).daysInMonth();
+									const day =
+										moment(`2007-${i + 1}-01`, "YYYY-M-DD").dayOfYear() - 1;
 									return graph
 										? <LineGraph
-												key={`"month${i}_monthline`}
-												width={width}
-												dataForXValue={graph.monthGraph.dataForXValue}
-												x={width * i}
-												data={graph.monthGraph.dLine}
+												key={`"month${i}_line`}
+												width={width * days}
+												dataForXValue={graph.dayGraph.dataForXValue}
+												x={width * day}
+												data={graph.dayGraph.dLine}
 											/>
 										: null;
 								})

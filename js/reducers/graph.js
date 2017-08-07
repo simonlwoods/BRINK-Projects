@@ -1,5 +1,6 @@
 const initialState = {
 	interaction: false,
+	swiping: false,
 	params: {
 		width: 0,
 		height: 0,
@@ -9,6 +10,11 @@ const initialState = {
 
 export default function(state = initialState, action) {
 	switch (action.type) {
+		case "GRAPH_SWIPING":
+			return {
+				...state,
+				swiping: action.value
+			};
 		case "GRAPH_INTERACTION":
 			return {
 				...state,
@@ -18,10 +24,9 @@ export default function(state = initialState, action) {
 			return {
 				...state,
 				[action.id]: {
-					dBar: action.dBar,
-					dLine: action.dLine,
-					dCount: action.dCount,
-					dataForXValue: action.dataForXValue
+					dayGraph: action.dayGraph,
+					monthGraph: action.monthGraph,
+					dCount: action.dCount
 				}
 			};
 		case "GRAPH_SET_PARAMS":

@@ -39,3 +39,10 @@ export function interaction(value) {
 		value
 	};
 }
+
+export function swiping(value) {
+	return {
+		type: "GRAPH_SWIPING",
+		value
+	};
+}

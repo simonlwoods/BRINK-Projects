@@ -25,7 +25,7 @@ import SplashScreen from "./components/SplashScreen";
 import Settings from "./components/Settings";
 import baseTheme from "./themes/base-theme.js";
 
-import { loadDataWeek, loadDataMonth } from "./actions/data";
+import { loadDataMonth } from "./actions/data";
 import { setParams } from "./actions/graph";
 
 const moment = require("moment");
@@ -90,21 +90,10 @@ class App extends React.Component {
 			const { width } = Dimensions.get("window");
 			store.dispatch(setParams(width, 225, 3));
 
-			const currentDate = moment().year(2007).month(7).date(20);
-			const week = Math.floor(currentDate.dayOfYear() / 7);
-			const month = currentDate.month();
-
 			co(function*() {
-				yield store.dispatch(loadDataMonth(month, true));
-				yield store.dispatch(loadDataWeek(week, true));
-				yield store.dispatch(loadDataWeek(week + 1, true));
-				yield store.dispatch(loadDataWeek(week - 1, true));
-				yield store.dispatch(loadDataMonth(month + 1, true));
-				yield store.dispatch(loadDataMonth(month - 1, true));
-				yield store.dispatch(loadDataWeek(week + 2, true));
-				yield store.dispatch(loadDataWeek(week - 2, true));
-				yield store.dispatch(loadDataMonth(month + 2, true));
-				yield store.dispatch(loadDataMonth(month - 2, true));
+				for (let i = 0; i < 12; i++) {
+					yield store.dispatch(loadDataMonth(i));
+				}
 			}).then(() => {
 				this.setState({
 					loading: false

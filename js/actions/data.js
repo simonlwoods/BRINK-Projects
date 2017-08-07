@@ -16,23 +16,10 @@ export function loadDataRange(start, end, draw = false) {
 	};
 }
 
-export function loadDataWeek(no, draw = false) {
-	return {
-		type: "DATA_WEEK_LOAD",
-		id: "week" + no,
-		week: no,
-		draw
-	};
-}
-
-export function loadDataMonth(no, draw = false) {
+export function loadDataMonth(no) {
 	return {
 		type: "DATA_MONTH_LOAD",
-		id: "month" + no,
-		month: no,
-		width: 1,
-		noGaps: false, //true,
-		draw
+		month: no
 	};
 }
 

@@ -14,11 +14,16 @@ class Timeline extends Component {
 	constructor(props) {
 		super(props);
 
-		const month = moment(props.date).month();
+		const dayOfYear = new Animated.Value(moment(props.date).dayOfYear());
+
+		const dayOffset = Animated.add(
+			new Animated.Value(Math.floor(365 / 2) + 1),
+			Animated.multiply(dayOfYear, new Animated.Value(-1))
+		);
 
 		this.state = {
-			month,
-			monthOffset: new Animated.Value(0),
+			dayOfYear,
+			dayOffset,
 			scaleX: new Animated.Value(1)
 		};
 
@@ -31,53 +36,36 @@ class Timeline extends Component {
 		return this.state.scaleX;
 	}
 
-	zoomToDate(callback) {
+	zoomToMonth(callback) {
 		const days = moment(this.props.date).daysInMonth();
-		const date = moment(this.props.date).date();
-
-		const ides = days / 2;
+		const dayOfYear = moment(this.props.date).date(1).dayOfYear();
 
 		Animated.parallel([
 			Animated.spring(this.state.scaleX, {
-				toValue: days
+				toValue: 1 / days
 			}),
-			Animated.spring(this.state.monthOffset, {
-				toValue: ides - date
+			Animated.spring(this.state.dayOfYear, {
+				toValue: dayOfYear
 			})
-		]).start();
-
-		setTimeout(() => {
+		]).start(() => {
 			setTimeout(() => {
 				this.state.scaleX.setValue(1);
-				this.state.monthOffset.setValue(0);
 			}, 200);
 			callback();
-		}, 300);
+		});
 	}
 
-	zoomToMonth() {
+	zoomToDate() {
+		const dayOfYear = moment(this.props.date).dayOfYear();
+
 		Animated.parallel([
 			Animated.spring(this.state.scaleX, {
 				toValue: 1
 			}),
-			Animated.spring(this.state.monthOffset, {
-				toValue: 0
+			Animated.spring(this.state.dayOfYear, {
+				toValue: dayOfYear
 			})
-		]).start();
-	}
-
-	getPinchHandler() {
-		return this._pinchHandler;
-	}
-
-	componentWillReceiveProps(nextProps) {
-		if (!nextProps.date.isSame(this.props.date)) {
-			const month = nextProps.date.month();
-
-			if (month !== this.state.month) {
-				this.setState({ month });
-			}
-		}
+		]);
 	}
 
 	dataTouch(data) {
@@ -90,10 +78,17 @@ class Timeline extends Component {
 		}
 	}
 
+	componentWillReceiveProps(nextProps) {
+		if (!nextProps.date.isSame(this.props.date)) {
+			const dayOfYear = moment(nextProps.date).dayOfYear();
+			this.state.dayOfYear.setValue(dayOfYear);
+		}
+	}
+
 	render() {
 		const { width, height, spacing } = this.props.graph.params;
 
-		const x = this.state.x;
+		const x = this.state.x - (moment(this.props.date).date() - 1) * width;
 		const y = Math.max(2, this.y(this.state.Y));
 		return (
 			<View>
@@ -127,7 +122,8 @@ class Timeline extends Component {
 						dataTouch={this.dataTouch.bind(this)}
 						interacting={this.props.interacting}
 						scaleX={this.state.scaleX}
-						month={this.state.month}
+						date={this.props.date}
+						dayOffset={this.state.dayOffset}
 					/>
 				</View>
 			</View>

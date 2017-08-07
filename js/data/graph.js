@@ -22,25 +22,30 @@ const line = (data, x, y) =>
 
 const pointsPerStop = 10;
 
+const opacity = scaleLinear().domain([0, 65]).range([0, 10]);
+
 export const Gradient = props =>
 	(console.log("Render gradient"), (
 		<Svg.LinearGradient id={props.id} x1="0" y1="0" x2={props.width} y2="0">
-			{Array.from(
-				new Array(Math.ceil(props.width / 10)),
-				(x, i) => i * 10
-			).map((x, i) => {
-				const d = props.dataForXValue(x);
-				let rgb = color.xyy.rgb([d.x, d.y, d.Y]);
-				rgb = rgb.map(x => Math.floor(x));
-				return (
-					<Svg.Stop
-						key={d.timestamp}
-						offset={x / props.width + ""}
-						stopColor={`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`}
-						stopOpacity={1}
-					/>
-				);
-			})}
+			{Array.from(new Array(Math.ceil(props.width / 10)), (x, i) => i * 10)
+				.map((x, i) => {
+					const d = props.dataForXValue(x);
+					if (!d) return null;
+					let rgb = color.xyy.rgb([d.x, d.y, d.Y]);
+					rgb = rgb.map(x => Math.floor(x));
+					rgb[0] = rgb[0] || 0;
+					rgb[1] = rgb[1] || 0;
+					rgb[2] = rgb[2] || 0;
+					return (
+						<Svg.Stop
+							key={d.timestamp}
+							offset={x / props.width + ""}
+							stopColor={`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`}
+							stopOpacity={Math.min(0.75, opacity(d.Y))}
+						/>
+					);
+				})
+				.filter(x => !!x)}
 		</Svg.LinearGradient>
 	));
 
