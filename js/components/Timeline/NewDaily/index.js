@@ -89,7 +89,7 @@ class Timeline extends Component {
 		const { width, height, spacing } = this.props.graph.params;
 
 		const x = this.state.x - (moment(this.props.date).date() - 1) * width;
-		const y = Math.max(2, this.y(this.state.Y));
+		const y = Math.max(1, this.y(this.state.Y));
 		return (
 			<View>
 				{this.state.x

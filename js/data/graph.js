@@ -22,7 +22,7 @@ const line = (data, x, y) =>
 
 const pointsPerStop = 10;
 
-const opacity = scaleLinear().domain([0, 65]).range([0, 10]);
+const opacity = scaleLinear().domain([0, 65]).range([0, 5]);
 
 export const Gradient = props =>
 	(console.log("Render gradient"), (
@@ -41,7 +41,7 @@ export const Gradient = props =>
 							key={d.timestamp}
 							offset={x / props.width + ""}
 							stopColor={`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`}
-							stopOpacity={Math.min(0.75, opacity(d.Y))}
+							stopOpacity={Math.min(0.5, opacity(d.Y))}
 						/>
 					);
 				})
