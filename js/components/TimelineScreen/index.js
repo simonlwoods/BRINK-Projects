@@ -15,6 +15,7 @@ import {
 import Time from "./../Time";
 import DailyTimeline from "./../Timeline/NewDaily";
 import MonthlyTimeline from "./../Timeline/Monthly";
+import YearlyTimeline from "./../Timeline/Yearly";
 
 import ImageSlider from "./../Background/imageSlider";
 
@@ -49,7 +50,7 @@ class TimelineScreen extends Component {
 
 		props.setGraphParams(width, height, spacing);
 
-		const active = "daily";
+		const active = "yearly";
 
 		this.state = {
 			active,
@@ -59,11 +60,12 @@ class TimelineScreen extends Component {
 			month,
 			width,
 			height,
-			yearOpacity: new Animated.Value(0),
+			yearOpacity: new Animated.Value(1),
 			monthOpacity: new Animated.Value(0),
-			dayOpacity: new Animated.Value(1),
+			dayOpacity: new Animated.Value(0),
 			dailyScale: new Animated.Value(1),
 			monthlyScale: new Animated.Value(1),
+			yearlyScale: new Animated.Value(1),
 			scaleY: new Animated.Value(0),
 			swipe: new Animated.Value(0),
 			interacting: new Animated.Value(0)
@@ -88,8 +90,8 @@ class TimelineScreen extends Component {
 
 	dayToMonth() {
 		Animated.parallel([
-			Animated.timing(this.state.monthOpacity, { toValue: 1, duration: 100 }),
-			Animated.timing(this.state.dayOpacity, { toValue: 0, duration: 100 })
+			Animated.timing(this.state.monthOpacity, { toValue: 1 }),
+			Animated.timing(this.state.dayOpacity, { toValue: 0 })
 		]).start(() => {
 			this.setState({ active: "monthly" });
 		});
@@ -97,10 +99,28 @@ class TimelineScreen extends Component {
 
 	monthToDay() {
 		Animated.parallel([
-			Animated.timing(this.state.monthOpacity, { toValue: 0, duration: 100 }),
-			Animated.timing(this.state.dayOpacity, { toValue: 1, duration: 100 })
+			Animated.timing(this.state.monthOpacity, { toValue: 0 }),
+			Animated.timing(this.state.dayOpacity, { toValue: 1 })
 		]).start(() => {
 			this.setState({ active: "daily" });
+		});
+	}
+
+	monthToYear() {
+		Animated.parallel([
+			Animated.timing(this.state.yearOpacity, { toValue: 1 }),
+			Animated.timing(this.state.monthOpacity, { toValue: 0 })
+		]).start(() => {
+			this.setState({ active: "yearly" });
+		});
+	}
+
+	yearToMonth() {
+		Animated.parallel([
+			Animated.timing(this.state.yearOpacity, { toValue: 0, duration: 100 }),
+			Animated.timing(this.state.monthOpacity, { toValue: 1, duration: 100 })
+		]).start(() => {
+			this.setState({ active: "monthly" });
 		});
 	}
 
@@ -170,12 +190,16 @@ class TimelineScreen extends Component {
 	}
 
 	pinchMove(value) {
+		console.log(this.state.active);
 		switch (this.state.active) {
 			case "daily":
 				this.state.dailyScale.setValue(value);
 				break;
 			case "monthly":
 				this.state.monthlyScale.setValue(value);
+				break;
+			case "yearly":
+				this.state.yearlyScale.setValue(value);
 				break;
 		}
 	}
@@ -186,9 +210,9 @@ class TimelineScreen extends Component {
 		switch (this.state.active) {
 			case "daily":
 				if (value <= 0.5) {
-					this.refs.daily
-						.getWrappedInstance()
-						.zoomToMonth(this.dayToMonth.bind(this));
+					this.dayToMonth();
+					this.refs.daily.getWrappedInstance().zoomToMonth();
+					this.refs.monthly.getWrappedInstance().zoomToMonth();
 				} else {
 					// Spring back to same day
 					Animated.spring(this.state.dailyScale, {
@@ -198,12 +222,28 @@ class TimelineScreen extends Component {
 				break;
 			case "monthly":
 				if (value >= 1.5) {
-					this.refs.monthly
-						.getWrappedInstance()
-						.zoomToDate(this.monthToDay.bind(this));
+					this.monthToDay();
+					this.refs.monthly.getWrappedInstance().zoomToDate();
+					this.refs.daily.getWrappedInstance().zoomToDate();
+				} else if (value <= 0.5) {
+					this.monthToYear();
+					this.refs.monthly.getWrappedInstance().zoomToYear();
+					this.refs.yearly.getWrappedInstance().zoomToYear();
 				} else {
 					// Spring back to same day
 					Animated.spring(this.state.monthlyScale, {
+						toValue: 1
+					}).start();
+				}
+				break;
+			case "yearly":
+				if (value >= 1.5) {
+					this.yearToMonth();
+					this.refs.yearly.getWrappedInstance().zoomToMonth();
+					this.refs.monthly.getWrappedInstance().zoomToMonth();
+				} else {
+					// Spring back to same day
+					Animated.spring(this.state.yearlyScale, {
 						toValue: 1
 					}).start();
 				}
@@ -276,7 +316,8 @@ class TimelineScreen extends Component {
 	componentDidMount() {
 		this.setState({
 			dailyScale: this.refs.daily.getWrappedInstance().getScale(),
-			monthlyScale: this.refs.monthly.getWrappedInstance().getScale()
+			monthlyScale: this.refs.monthly.getWrappedInstance().getScale(),
+			yearlyScale: this.refs.yearly.getWrappedInstance().getScale()
 		});
 
 		Animated.sequence([
@@ -295,6 +336,25 @@ class TimelineScreen extends Component {
 		displayTime.minutes(Math.floor(displayTime.minutes() / 15) * 15);
 
 		const displayDate = moment(this.state.currentDate);
+
+		const yearly = (
+			<Animated.View
+				key="yearly"
+				style={{
+					opacity: this.state.yearOpacity,
+					position: "absolute",
+					top: 0,
+					width
+				}}
+			>
+				<YearlyTimeline
+					ref="yearly"
+					dataTouch={data => this.dataTouch(data)}
+					date={this.state.currentDate}
+					interacting={this.state.interacting}
+				/>
+			</Animated.View>
+		);
 
 		const monthly = (
 			<Animated.View
@@ -315,6 +375,25 @@ class TimelineScreen extends Component {
 			</Animated.View>
 		);
 
+		const daily = (
+			<Animated.View
+				key="daily"
+				style={{
+					opacity: this.state.dayOpacity,
+					position: "absolute",
+					top: 0,
+					width
+				}}
+			>
+				<DailyTimeline
+					ref="daily"
+					dataTouch={data => this.dataTouch(data)}
+					date={this.state.currentDate}
+					interacting={this.state.interacting}
+				/>
+			</Animated.View>
+		);
+
 		return (
 			<Container
 				background={src}
@@ -326,6 +405,7 @@ class TimelineScreen extends Component {
 				</Header>
 				<Content>
 					<View style={{ width }} {...this._pinchHandler}>
+
 						<Animated.View
 							style={{
 								marginTop: 100,
@@ -337,24 +417,11 @@ class TimelineScreen extends Component {
 								]
 							}}
 						>
-							{this.state.active === "daily" ? monthly : null}
-							<Animated.View
-								key="daily"
-								style={{
-									opacity: this.state.dayOpacity,
-									position: "absolute",
-									top: 0,
-									width
-								}}
-							>
-								<DailyTimeline
-									ref="daily"
-									dataTouch={data => this.dataTouch(data)}
-									date={this.state.currentDate}
-									interacting={this.state.interacting}
-								/>
-							</Animated.View>
-							{this.state.active === "monthly" ? monthly : null}
+							{[daily, monthly, yearly].sort(
+								(a, b) =>
+									(a.key == this.state.active ? 1 : 0) -
+									(b.key == this.state.active ? 1 : 0)
+							)}
 						</Animated.View>
 					</View>
 				</Content>

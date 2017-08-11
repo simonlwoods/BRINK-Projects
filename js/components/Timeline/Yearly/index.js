@@ -4,7 +4,6 @@ import { connect } from "react-redux";
 import { Svg } from "expo";
 import { scaleLinear, scaleTime } from "d3-scale";
 
-import PinchHandler from "./PinchHandler";
 import Graph from "./Graph";
 
 const moment = require("moment");
@@ -14,20 +13,25 @@ class Timeline extends Component {
 	constructor(props) {
 		super(props);
 
-		const dayOfYear = new Animated.Value(moment(props.date).dayOfYear());
+		console.log("Yearly constructor");
 
-		const dayOffset = Animated.add(
-			new Animated.Value(Math.floor(365 / 2) + 1),
-			Animated.multiply(dayOfYear, new Animated.Value(-1))
+		const { width, height } = this.props.graph.params;
+
+		const offsetMonth = new Animated.Value(0);
+		const widthValue = new Animated.Value(width);
+		const day = new Animated.Value(moment(props.date).date(1).dayOfYear());
+
+		const monthOffset = Animated.multiply(
+			offsetMonth,
+			Animated.multiply(widthValue, Animated.add(day, new Animated.Value(-1)))
 		);
 
 		this.state = {
-			dayOfYear,
-			dayOffset,
+			day,
+			offsetMonth,
+			monthOffset,
 			scaleX: new Animated.Value(1)
 		};
-
-		const { height } = this.props.graph.params;
 
 		this.y = scaleLinear().domain([0, 65]).range([0, height / 2]);
 	}
@@ -36,31 +40,30 @@ class Timeline extends Component {
 		return this.state.scaleX;
 	}
 
-	zoomToMonth() {
-		const days = moment(this.props.date).daysInMonth();
-		const dayOfYear = moment(this.props.date).date(1).dayOfYear();
+	componentWillReceiveProps(nextProps) {
+		this.state.day.setValue(moment(nextProps.date).date(1).dayOfYear());
+	}
 
+	zoomToMonth() {
 		Animated.parallel([
 			Animated.timing(this.state.scaleX, {
-				toValue: 1 / days
+				toValue: 1 / 12
 			}),
-			Animated.timing(this.state.dayOfYear, {
-				toValue: dayOfYear
+			Animated.timing(this.state.offsetMonth, {
+				toValue: 1
 			})
 		]).start();
 	}
 
-	zoomToDate() {
-		const dayOfYear = moment(this.props.date).dayOfYear();
-
+	zoomToYear() {
 		Animated.parallel([
 			Animated.timing(this.state.scaleX, {
 				toValue: 1
 			}),
-			Animated.timing(this.state.dayOfYear, {
-				toValue: dayOfYear
+			Animated.timing(this.state.offsetMonth, {
+				toValue: 0
 			})
-		]);
+		]).start();
 	}
 
 	dataTouch(data) {
@@ -73,17 +76,10 @@ class Timeline extends Component {
 		}
 	}
 
-	componentWillReceiveProps(nextProps) {
-		if (!nextProps.date.isSame(this.props.date)) {
-			const dayOfYear = moment(nextProps.date).dayOfYear();
-			this.state.dayOfYear.setValue(dayOfYear);
-		}
-	}
-
 	render() {
 		const { width, height, spacing } = this.props.graph.params;
 
-		const x = this.state.x - (moment(this.props.date).date() - 1) * width;
+		const x = this.state.x;
 		const y = Math.max(1, this.y(this.state.Y));
 		return (
 			<View>
@@ -117,8 +113,7 @@ class Timeline extends Component {
 						dataTouch={this.dataTouch.bind(this)}
 						interacting={this.props.interacting}
 						scaleX={this.state.scaleX}
-						date={this.props.date}
-						dayOffset={this.state.dayOffset}
+						monthOffset={this.state.monthOffset}
 					/>
 				</View>
 			</View>

@@ -70,6 +70,13 @@ function dataMonthLoad(store, next, action) {
 	return dataRangeLoad(store, next, action);
 }
 
+function dataYearLoad(store, next, action) {
+	action.id = "year";
+	action.start = moment("2007-01-01");
+	action.end = moment("2007-12-31");
+	return dataRangeLoad(store, next, action);
+}
+
 export default store => next => action => {
 	switch (action.type) {
 		case "DATA_LOAD":
@@ -80,6 +87,8 @@ export default store => next => action => {
 			return dataWeekLoad(store, next, action);
 		case "DATA_MONTH_LOAD":
 			return dataMonthLoad(store, next, action);
+		case "DATA_YEAR_LOAD":
+			return dataYearLoad(store, next, action);
 		default:
 			return next(action);
 	}

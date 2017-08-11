@@ -25,7 +25,7 @@ import SplashScreen from "./components/SplashScreen";
 import Settings from "./components/Settings";
 import baseTheme from "./themes/base-theme.js";
 
-import { loadDataMonth } from "./actions/data";
+import { loadDataMonth, loadDataYear } from "./actions/data";
 import { setParams } from "./actions/graph";
 
 const moment = require("moment");
@@ -94,6 +94,7 @@ class App extends React.Component {
 				for (let i = 0; i < 12; i++) {
 					yield store.dispatch(loadDataMonth(i));
 				}
+				yield store.dispatch(loadDataYear());
 			}).then(() => {
 				this.setState({
 					loading: false

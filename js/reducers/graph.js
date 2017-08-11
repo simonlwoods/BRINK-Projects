@@ -20,6 +20,11 @@ export default function(state = initialState, action) {
 				...state,
 				interaction: action.value
 			};
+		case "GRAPH_SET_YEAR_GRAPH":
+			return {
+				...state,
+				year: action.yearGraph
+			};
 		case "GRAPH_SET_BAR_GRAPH":
 			return {
 				...state,

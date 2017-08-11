@@ -23,6 +23,12 @@ export function loadDataMonth(no) {
 	};
 }
 
+export function loadDataYear() {
+	return {
+		type: "DATA_YEAR_LOAD"
+	};
+}
+
 export function unloadData(date) {
 	return {
 		type: "DATA_UNLOAD"

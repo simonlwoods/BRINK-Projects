@@ -4,7 +4,6 @@ import { connect } from "react-redux";
 import { Svg } from "expo";
 import { scaleLinear, scaleTime } from "d3-scale";
 
-import PinchHandler from "./PinchHandler";
 import Graph from "./Graph";
 
 const moment = require("moment");
@@ -18,7 +17,7 @@ class Timeline extends Component {
 
 		this.state = {
 			month,
-			monthOffset: new Animated.Value(0),
+			dayOffset: new Animated.Value(0),
 			scaleX: new Animated.Value(1)
 		};
 
@@ -31,43 +30,40 @@ class Timeline extends Component {
 		return this.state.scaleX;
 	}
 
-	zoomToDate(callback) {
+	zoomToDate() {
 		const days = moment(this.props.date).daysInMonth();
 		const date = moment(this.props.date).date();
 
-		const ides = days / 2;
-
 		Animated.parallel([
-			Animated.spring(this.state.scaleX, {
+			Animated.timing(this.state.scaleX, {
 				toValue: days
 			}),
-			Animated.spring(this.state.monthOffset, {
-				toValue: ides - date
+			Animated.timing(this.state.dayOffset, {
+				toValue: date / days
 			})
 		]).start();
-
-		setTimeout(() => {
-			setTimeout(() => {
-				this.state.scaleX.setValue(1);
-				this.state.monthOffset.setValue(0);
-			}, 200);
-			callback();
-		}, 300);
 	}
 
 	zoomToMonth() {
 		Animated.parallel([
-			Animated.spring(this.state.scaleX, {
+			Animated.timing(this.state.scaleX, {
 				toValue: 1
 			}),
-			Animated.spring(this.state.monthOffset, {
+			Animated.timing(this.state.dayOffset, {
 				toValue: 0
 			})
 		]).start();
 	}
 
-	getPinchHandler() {
-		return this._pinchHandler;
+	zoomToYear() {
+		Animated.parallel([
+			Animated.timing(this.state.scaleX, {
+				toValue: 1 / 12
+			}),
+			Animated.timing(this.state.dayOffset, {
+				toValue: 0
+			})
+		]).start();
 	}
 
 	componentWillReceiveProps(nextProps) {
@@ -128,6 +124,7 @@ class Timeline extends Component {
 						interacting={this.props.interacting}
 						scaleX={this.state.scaleX}
 						month={this.state.month}
+						dayOffset={this.state.dayOffset}
 					/>
 				</View>
 			</View>
