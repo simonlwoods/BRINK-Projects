@@ -3,6 +3,7 @@ import { Animated, PanResponder, View } from "react-native";
 import { connect } from "react-redux";
 
 import { Svg } from "expo";
+import { bisector } from "d3-array";
 
 import { BarGraph, LineGraph } from "./../../../data/graph";
 
@@ -25,6 +26,8 @@ class Graph extends Component {
 		);
 
 		this._initialDraw = false;
+
+		this._dataBisector = bisector(d => d.xValue);
 
 		this.state = {
 			touch,
@@ -81,17 +84,31 @@ class Graph extends Component {
 
 		const dayOffset =
 			moment(`2007-${month + 1}-01`, "YYYY-M-DD").dayOfYear() - 1;
+		console.log(dayOffset, width * dayOffset);
 		const x = value - width * dayOffset;
 
 		console.log("Touch daily");
-		console.log(value, x);
+		console.log(value, x, dayOffset);
 
-		const data = thisMonth.dayGraph.dataForXValue(x);
+		const data = this.dataForXValue(x);
 
 		this.props.dataTouch(data);
 	}
 
+	dataForXValue(x) {
+		const month = moment(this.props.date).month();
+		const data = this.props.graph["month" + month].dayGraph.data;
+		return data[this._dataBisector.left(data, x)];
+	}
+
 	shouldComponentUpdate(newProps) {
+		for (let i = 0; i < 12; i++) {
+			if (!newProps.graph["month" + i]) {
+				return false;
+			}
+		}
+		return true;
+
 		if (!this._initialDraw) {
 			for (let i = 0; i < 12; i++) {
 				if (!newProps.graph["month" + i]) {
@@ -105,8 +122,12 @@ class Graph extends Component {
 		return false;
 	}
 
+	componentDidUpdate() {
+		console.log("Finished rendering daily");
+	}
+
 	render() {
-		console.log("Render graph");
+		console.log("Render daily graph");
 
 		const { width, height, spacing } = this.props.graph.params;
 
@@ -135,7 +156,11 @@ class Graph extends Component {
 									const graph = this.props.graph["month" + i];
 									const day =
 										moment(`2007-${i + 1}-01`, "YYYY-M-DD").dayOfYear() - 1;
-									return graph
+									if (graph && graph.dayGraph && graph.dayGraph.dBar) {
+										// console.log(width * day);
+										// console.log(graph.dayGraph.dBar);
+									}
+									return graph && graph.dayGraph && graph.dayGraph.dBar
 										? <BarGraph
 												key={`month${i}_bar`}
 												x={width * day}
@@ -146,6 +171,12 @@ class Graph extends Component {
 								.filter(x => !!x)}
 						</Svg>
 					</View>
+				</Animated.View>
+			</View>
+		);
+	}
+}
+/*
 					<Animated.View
 						style={{
 							position: "absolute",
@@ -169,7 +200,7 @@ class Graph extends Component {
 										? <LineGraph
 												key={`"month${i}_line`}
 												width={width * days}
-												dataForXValue={graph.dayGraph.dataForXValue}
+												dataForXValue={this.dataForXValue.bind(this)}
 												x={width * day}
 												data={graph.dayGraph.dLine}
 											/>
@@ -178,11 +209,7 @@ class Graph extends Component {
 								.filter(x => !!x)}
 						</Svg>
 					</Animated.View>
-				</Animated.View>
-			</View>
-		);
-	}
-}
+					*/
 
 const mapDispatchToProps = {
 	interaction

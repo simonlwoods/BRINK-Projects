@@ -34,3 +34,24 @@ export function unloadData(date) {
 		type: "DATA_UNLOAD"
 	};
 }
+
+export function loadDay(month) {
+	return {
+		type: "DATA_LOAD_DAY",
+		month: month
+	};
+}
+
+export function loadMonth(month) {
+	return {
+		type: "DATA_LOAD_MONTH",
+		month: month
+	};
+}
+
+export function loadYear(year) {
+	return {
+		type: "DATA_LOAD_YEAR",
+		year: year
+	};
+}

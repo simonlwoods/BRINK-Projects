@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { Animated, PanResponder, View } from "react-native";
 import { connect } from "react-redux";
 
+import { bisector } from "d3-array";
 import { Svg } from "expo";
 
 import { BarGraph, LineGraph } from "./../../../data/graph";
@@ -17,6 +18,7 @@ class Graph extends Component {
 		const touch = new Animated.Value(0);
 
 		this._initialDraw = false;
+		this._dataBisector = bisector(d => d.xValue);
 
 		this.state = {
 			touch
@@ -65,9 +67,14 @@ class Graph extends Component {
 
 		const { width } = this.props.graph.params;
 
-		const data = this.props.graph["year"].dataForXValue(value);
+		const data = this.dataForXValue(value);
 
 		this.props.dataTouch(data);
+	}
+
+	dataForXValue(x) {
+		const data = this.props.graph["year"].data;
+		return data[this._dataBisector.left(data, x)];
 	}
 
 	shouldComponentUpdate(newProps) {
@@ -81,6 +88,10 @@ class Graph extends Component {
 		}
 
 		return false;
+	}
+
+	componentDidUpdate() {
+		console.log("Finished rendering yearly");
 	}
 
 	render() {
@@ -122,7 +133,7 @@ class Graph extends Component {
 								? <LineGraph
 										key={"year_line"}
 										width={width}
-										dataForXValue={graph.dataForXValue}
+										dataForXValue={this.dataForXValue.bind(this)}
 										data={graph.dLine}
 									/>
 								: null}

@@ -73,7 +73,10 @@ class App extends React.Component {
 		this.state = {
 			loading: true
 		};
-		persistStore(store, { storage: AsyncStorage }, () => {
+
+		console.log("STATE LOADING");
+		persistStore(store, { storage: AsyncStorage, whitelist: ["none"] }, () => {
+			console.log("STATE LOADED");
 			const bridge = store.getState().bridges.current;
 
 			if (bridge.id) {
@@ -100,7 +103,7 @@ class App extends React.Component {
 					loading: false
 				});
 			});
-		}).purge(["settings", "data", "graph"]);
+		});
 	}
 	render() {
 		return (

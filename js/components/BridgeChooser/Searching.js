@@ -1,9 +1,7 @@
+import React from "react";
+import styled from "styled-components/native";
 
-import React from 'react';
-import { Spinner } from 'native-base';
-import styled from 'styled-components/native';
-
-import { Text, View } from './../../components';
+import { Text, View } from "./../../components";
 
 const SearchText = styled(Text)`
   line-height: 30;
@@ -15,24 +13,15 @@ const SearchView = styled(View)`
   justify-content: center;
 `;
 
-const SearchSpinner = styled(Spinner)`
-    padding: 0;
-    margin: 0;
-    margin-right: 10;
-    height: 40;
-    width: 40;
-`;
-
-
-const Searching = props => (props.searching ? (
-  <SearchView>
-    <SearchSpinner />
-    <SearchText>Searching for Philips Hue bridges...</SearchText>
-  </SearchView>
-) : null);
+const Searching = props =>
+	(props.searching
+		? <SearchView>
+				<SearchText>Searching for Philips Hue bridges...</SearchText>
+			</SearchView>
+		: null);
 
 Searching.propTypes = {
-  searching: React.PropTypes.bool,
+	searching: React.PropTypes.bool
 };
 
 export default Searching;

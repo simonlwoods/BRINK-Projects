@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { Animated, PanResponder, View } from "react-native";
 import { connect } from "react-redux";
+import { bisector } from "d3-array";
 
 import { Svg } from "expo";
 
@@ -32,6 +33,7 @@ class Graph extends Component {
 		);
 
 		this._initialDraw = false;
+		this._dataBisector = bisector(d => d.xValue);
 
 		this.state = {
 			touch,
@@ -85,14 +87,18 @@ class Graph extends Component {
 		const { width } = this.props.graph.params;
 
 		const x = value - width * this.props.month;
-		const data = this.props.graph[
-			"month" + this.props.month
-		].monthGraph.dataForXValue(x);
+
+		const data = this.dataForXValue(x);
 
 		console.log("Touch monthly");
 		console.log(value, x);
 
 		this.props.dataTouch(data);
+	}
+
+	dataForXValue(x) {
+		const data = this.props.graph["month" + this.props.month].monthGraph.data;
+		return data[this._dataBisector.left(data, x)];
 	}
 
 	shouldComponentUpdate(newProps) {
@@ -114,6 +120,10 @@ class Graph extends Component {
 
 		this.state.month.setValue(newProps.month);
 		this.state.widthValue.setValue(width);
+	}
+
+	componentDidUpdate() {
+		console.log("Finished rendering monthly");
 	}
 
 	render() {
@@ -167,7 +177,7 @@ class Graph extends Component {
 										? <LineGraph
 												key={`"month${i}_monthline`}
 												width={width}
-												dataForXValue={graph.monthGraph.dataForXValue}
+												dataForXValue={this.dataForXValue.bind(this)}
 												x={width * i}
 												data={graph.monthGraph.dLine}
 											/>

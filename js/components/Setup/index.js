@@ -22,7 +22,7 @@ const FadeNavigator = config =>
 			constructor(props) {
 				super(props);
 				this.state = {
-					setup: false,
+					setup: props.connected,
 					from: 0,
 					to: 0,
 					opacity: Array(config.length)
@@ -53,6 +53,7 @@ const FadeNavigator = config =>
 			}
 
 			render() {
+				console.log(this.state.setup);
 				if (this.state.setup)
 					return React.createElement(config[config.length - 1], {});
 				return (

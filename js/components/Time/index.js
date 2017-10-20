@@ -2,7 +2,7 @@ import styled from "styled-components/native";
 import React from "react";
 
 const View = styled.View`
-  margin: 40 0 0 0;
+  margin: 40px 0 0 0;
 `;
 
 const Text = styled.Text`

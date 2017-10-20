@@ -20,6 +20,13 @@ export default function(state = initialState, action) {
 				...state,
 				interaction: action.value
 			};
+		case "GRAPH_SET_DAY":
+		case "GRAPH_SET_MONTH":
+		case "GRAPH_SET_YEAR":
+			return {
+				...state,
+				[action.id]: action.result
+			};
 		case "GRAPH_SET_YEAR_GRAPH":
 			return {
 				...state,

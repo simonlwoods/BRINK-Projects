@@ -19,7 +19,6 @@ export default function(timelineScreen) {
 			timelineScreen.resetPinch();
 		},
 		onResponderMove: (evt, gestureState) => {
-			if (gestureState.pinch && !pinchBasis) pinchBasis;
 			if (gestureState.pinch) {
 				if (!pinchBasis) pinchBasis = gestureState.pinch;
 				lastPinch = gestureState.pinch / pinchBasis;

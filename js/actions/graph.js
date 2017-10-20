@@ -34,6 +34,7 @@ export function unloadGraph(id) {
 }
 
 export function interaction(value) {
+	return { type: "NO_ACTION" };
 	return {
 		type: "GRAPH_INTERACTION",
 		value
@@ -41,6 +42,7 @@ export function interaction(value) {
 }
 
 export function swiping(value) {
+	return { type: "NO_ACTION" };
 	return {
 		type: "GRAPH_SWIPING",
 		value

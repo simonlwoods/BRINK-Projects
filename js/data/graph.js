@@ -68,15 +68,13 @@ export const LineGraph = props =>
 			<Svg.Defs>
 				<Gradient
 					{...props}
-					id={"gradient" + props.dataForXValue(0).timestamp.getTime()}
+					id={"gradient" + props.dataForXValue(0).timestamp}
 				/>
 			</Svg.Defs>
 			<Svg.Path
 				x={props.x}
 				d={props.data}
-				stroke={
-					"url(#gradient" + props.dataForXValue(0).timestamp.getTime() + ")"
-				}
+				stroke={"url(#gradient" + props.dataForXValue(0).timestamp + ")"}
 				strokeWidth={1}
 				fillOpacity={0}
 			/>

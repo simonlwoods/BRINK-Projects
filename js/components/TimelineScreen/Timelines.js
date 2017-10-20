@@ -123,7 +123,7 @@ class TimelineScreen extends Component {
 
 	debounce() {
 		const thisRequest = new Date();
-		if (thisRequest - this.lastRequest < 150) return false;
+		if (thisRequest - this.lastRequest < 100) return false;
 		this.lastRequest = thisRequest;
 		return true;
 	}
@@ -181,9 +181,9 @@ class TimelineScreen extends Component {
 	}
 
 	resetPinch() {
+		this.pinchMove(1);
 		this.props.interaction(true);
 		this.props.swiping(true);
-		this.pinchMove(1);
 	}
 
 	pinchMove(value) {
@@ -306,7 +306,7 @@ class TimelineScreen extends Component {
 		const height = 225;
 		const spacing = 3;
 
-		//		this.props.setGraphParams(width, height, spacing);
+		this.props.setGraphParams(width, height, spacing);
 
 		this.props.swiping(false);
 		this.props.interaction(false);
@@ -332,10 +332,6 @@ class TimelineScreen extends Component {
 			Animated.timing(this.state.scaleY, { toValue: 0, duration: 500 }),
 			Animated.spring(this.state.scaleY, { toValue: 1, duration: 1000 })
 		]).start();
-	}
-
-	componentDidUpdate() {
-		console.log("Finished rendering timeline");
 	}
 
 	render() {

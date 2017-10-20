@@ -1,6 +1,7 @@
 import { csvParse } from "d3-dsv";
 import { InteractionManager } from "react-native";
 
+import { loadDay, loadMonth, loadYear } from "./../data";
 import csvLoad from "./../data/loader";
 import { loadData } from "./../actions/data";
 
@@ -43,6 +44,8 @@ function dataLoad(store, next, action) {
 }
 
 function dataRangeLoad(store, next, action) {
+	const state = store.getState();
+	if (state.graph[action.id]) return Promise.resolve();
 	return co(function*() {
 		const start = moment(action.start);
 		const end = moment(action.end);
@@ -77,6 +80,87 @@ function dataYearLoad(store, next, action) {
 	return dataRangeLoad(store, next, action);
 }
 
+function dataLoadYear(store, next, action) {
+	const key = action.year;
+	action.id = key + "-year";
+	const data = store.getState().data;
+	if (Object.prototype.hasOwnProperty.call(data, key)) {
+		return Promise.resolve(data[key]);
+	}
+
+	return next({
+		...action,
+		types: [
+			`${action.type}_REQUEST`,
+			`${action.type}_SUCCESS`,
+			`${action.type}_FAILURE`
+		],
+		promise: () =>
+			new Promise((resolve, reject) => {
+				InteractionManager.runAfterInteractions(() => {
+					const data = loadYear(key);
+					if (data) {
+						resolve(data);
+					}
+				});
+			})
+	});
+}
+
+function dataLoadMonth(store, next, action) {
+	const key = action.month;
+	action.id = key + "-month";
+	const data = store.getState().data;
+	if (Object.prototype.hasOwnProperty.call(data, key)) {
+		return Promise.resolve(data[key]);
+	}
+
+	return next({
+		...action,
+		types: [
+			`${action.type}_REQUEST`,
+			`${action.type}_SUCCESS`,
+			`${action.type}_FAILURE`
+		],
+		promise: () =>
+			new Promise((resolve, reject) => {
+				InteractionManager.runAfterInteractions(() => {
+					const data = loadMonth(key);
+					if (data) {
+						resolve(data);
+					}
+				});
+			})
+	});
+}
+
+function dataLoadDay(store, next, action) {
+	const key = action.month;
+	action.id = key + "-day";
+	const data = store.getState().data;
+	if (Object.prototype.hasOwnProperty.call(data, key)) {
+		return Promise.resolve(data[key]);
+	}
+
+	return next({
+		...action,
+		types: [
+			`${action.type}_REQUEST`,
+			`${action.type}_SUCCESS`,
+			`${action.type}_FAILURE`
+		],
+		promise: () =>
+			new Promise((resolve, reject) => {
+				InteractionManager.runAfterInteractions(() => {
+					const data = loadDay(key);
+					if (data) {
+						resolve(data);
+					}
+				});
+			})
+	});
+}
+
 export default store => next => action => {
 	switch (action.type) {
 		case "DATA_LOAD":
@@ -89,6 +173,12 @@ export default store => next => action => {
 			return dataMonthLoad(store, next, action);
 		case "DATA_YEAR_LOAD":
 			return dataYearLoad(store, next, action);
+		case "DATA_LOAD_YEAR":
+			return dataLoadYear(store, next, action);
+		case "DATA_LOAD_MONTH":
+			return dataLoadMonth(store, next, action);
+		case "DATA_LOAD_DAY":
+			return dataLoadDay(store, next, action);
 		default:
 			return next(action);
 	}

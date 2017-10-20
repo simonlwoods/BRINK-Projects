@@ -13,8 +13,20 @@ function getClient(bridge) {
 
 function* findBridges() {
 	for (let i = 0; i < 10; i++) {
+		console.log(i);
+		console.log(huejay);
+		huejay
+			.discover()
+			.then(bridges => {
+				console.log(bridges);
+			})
+			.catch(error => {
+				console.log(error);
+			});
 		const bridges = yield huejay.discover();
+		console.log(bridges);
 		for (const bridge of bridges) {
+			console.log(bridge.ip);
 			const client = new huejay.Client({ host: bridge.ip });
 			let user = new client.users.User(); // eslint-disable-line
 			user.deviceType = "polarapp";
@@ -52,6 +64,7 @@ const getLights = state =>
 
 const setLights = (state, color) =>
 	function*() {
+		console.log("Start set lights");
 		const client = getClient(state.bridges.current);
 		const lights = yield client.lights.getAll();
 		for (let light of lights) {
@@ -64,6 +77,7 @@ const setLights = (state, color) =>
 			light.transitionTime = 0.1;
 			yield client.lights.save(light);
 		}
+		console.log("End set lights");
 		return lights;
 	};
 
@@ -138,8 +152,8 @@ const setSchedule = (store, next, addToQueue, action) =>
 			}
 			group.on = group.brightness != 0;
 			group.xy = [dataPoint.x, dataPoint.y];
-			group.transitionTime = duration.asSeconds();
-			//group.transitionTime = 1;
+			//group.transitionTime = duration.asSeconds();
+			group.transitionTime = 1;
 
 			//rebasedTime = moment(rebase).add(i * 2, "seconds");
 

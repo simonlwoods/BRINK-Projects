@@ -2,6 +2,7 @@ import moment from "moment";
 import { csvParse } from "d3-dsv";
 
 import csvLoad from "./loader.js";
+import fileLoad from "./file-loader.js";
 
 function daysFrom(from, to) {
 	if (from.isAfter(to)) return [];
@@ -22,7 +23,7 @@ const daysFrom = (from, to, array = []) =>
 */
 
 const rowMap = d => ({
-	timestamp: moment.unix(d.timestamp * 1000),
+	timestamp: moment.unix(d.timestamp),
 	Y: +d.Y,
 	x: +d.x,
 	y: +d.y
@@ -39,3 +40,7 @@ export default (from, to) =>
 				] = data), result),
 			[]
 		);
+
+export const loadDay = month => csvParse(fileLoad(month + "-day"), rowMap);
+export const loadMonth = month => csvParse(fileLoad(month + "-month"), rowMap);
+export const loadYear = year => csvParse(fileLoad(year + "-year"), rowMap);
