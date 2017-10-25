@@ -86,7 +86,7 @@ class App extends React.Component {
 		console.log("STATE LOADING");
 		persistStore(
 			store,
-			{ storage: AsyncStorage, whitelist: ["bridges"] },
+			{ storage: AsyncStorage, whitelist: ["bridges", "graph"] },
 			() => {
 				console.log("STATE LOADED");
 				const bridge = store.getState().bridges.current;
