@@ -7,8 +7,6 @@ import { bisector } from "d3-array";
 
 import { BarGraph, LineGraph } from "./../../../data/graph";
 
-import { interaction } from "./../../../actions/graph";
-
 const moment = require("moment");
 
 class Graph extends Component {
@@ -30,6 +28,7 @@ class Graph extends Component {
 		this._dataBisector = bisector(d => d.xValue);
 
 		this.state = {
+			dayOffset: props.dayOffset,
 			touch,
 			widthValue,
 			translateX
@@ -39,12 +38,12 @@ class Graph extends Component {
 	componentWillMount() {
 		this._touchResponder = PanResponder.create({
 			onStartShouldSetPanResponder: (evt, gestureState) =>
-				!this.props.graph.swiping && gestureState.numberActiveTouches == 1,
+				!this.props.isSwiping() && gestureState.numberActiveTouches == 1,
 
 			onStartShouldSetPanResponderCapture: (evt, gestureState) => false,
 
 			onMoveShouldSetPanResponder: (evt, gestureState) =>
-				!this.props.graph.swiping && gestureState.numberActiveTouches == 1,
+				!this.props.isSwiping() && gestureState.numberActiveTouches == 1,
 
 			onMoveShouldSetPanResponderCapture: (evt, gestureState) => false,
 
@@ -61,11 +60,17 @@ class Graph extends Component {
 
 			onPanResponderTerminationRequest: (evt, gestureState) => true,
 
-			onPanResponderRelease: (evt, gestureState) =>
-				this.props.interaction(false),
+			onPanResponderRelease: (evt, gestureState) => {
+				this._savedValue = evt.nativeEvent.locationX;
+				this.props.interaction(false);
+			},
 
-			onPanResponderTerminate: (evt, gestureState) =>
-				this.props.interaction(false),
+			onPanResponderTerminate: (evt, gestureState) => {
+				this.props.interaction(false);
+				if (this._savedValue) {
+					this.touchCallback({ value: this._savedValue });
+				}
+			},
 
 			onShouldBlockNativeResponder: (evt, gestureState) => false
 		});
@@ -74,8 +79,9 @@ class Graph extends Component {
 	}
 
 	touchCallback({ value }) {
+		const year = moment(this.props.date).year();
 		const month = moment(this.props.date).month();
-		const thisMonth = this.props.graph["month" + month];
+		const thisMonth = this.props.graph[year + "-" + (month + 1) + "-day"];
 		if (!thisMonth) {
 			return;
 		}
@@ -83,12 +89,8 @@ class Graph extends Component {
 		const { width } = this.props.graph.params;
 
 		const dayOffset =
-			moment(`2007-${month + 1}-01`, "YYYY-M-DD").dayOfYear() - 1;
-		console.log(dayOffset, width * dayOffset);
+			moment(`${year}-${month + 1}-01`, "YYYY-M-DD").dayOfYear() - 1;
 		const x = value - width * dayOffset;
-
-		console.log("Touch daily");
-		console.log(value, x, dayOffset);
 
 		const data = this.dataForXValue(x);
 
@@ -96,29 +98,24 @@ class Graph extends Component {
 	}
 
 	dataForXValue(x) {
-		const month = moment(this.props.date).month();
-		const data = this.props.graph["month" + month].dayGraph.data;
+		const year = moment(this.props.date).year();
+		const month = moment(this.props.date).month() + 1;
+		const key = `${year}-${month < 10 ? "0" : ""}${month}-day`;
+		const data = this.props.graph[key].data;
 		return data[this._dataBisector.left(data, x)];
 	}
 
 	shouldComponentUpdate(newProps) {
-		for (let i = 0; i < 12; i++) {
-			if (!newProps.graph["month" + i]) {
-				return false;
-			}
-		}
-		return true;
-
 		if (!this._initialDraw) {
-			for (let i = 0; i < 12; i++) {
-				if (!newProps.graph["month" + i]) {
+			for (let i = 1; i <= 12; i++) {
+				const key = `2007-${i < 10 ? "0" : ""}${i}-day`;
+				if (!newProps.graph[key]) {
 					return false;
 				}
 			}
 			this._initialDraw = true;
 			return true;
 		}
-
 		return false;
 	}
 
@@ -151,20 +148,22 @@ class Graph extends Component {
 						}}
 					>
 						<Svg height={height} width={width * 365}>
-							{Array.from(new Array(12), (x, i) => i)
+							{Array(12)
+								.fill(0)
 								.map((x, i) => {
-									const graph = this.props.graph["month" + i];
+									const key = `2007-${i + 1 < 10 ? "0" : ""}${i + 1}-day`;
+									const graph = this.props.graph[key];
 									const day =
 										moment(`2007-${i + 1}-01`, "YYYY-M-DD").dayOfYear() - 1;
-									if (graph && graph.dayGraph && graph.dayGraph.dBar) {
-										// console.log(width * day);
-										// console.log(graph.dayGraph.dBar);
+
+									if (graph && graph.dBar) {
+										//console.log(graph.dBar);
 									}
-									return graph && graph.dayGraph && graph.dayGraph.dBar
+									return graph && graph.dBar
 										? <BarGraph
 												key={`month${i}_bar`}
 												x={width * day}
-												data={graph.dayGraph.dBar}
+												data={graph.dBar}
 											/>
 										: null;
 								})
@@ -187,9 +186,11 @@ class Graph extends Component {
 						}}
 					>
 						<Svg height={height} width={width * 365}>
-							{Array.from(new Array(12), (x, i) => i)
+							{Array(12)
+								.fill(0)
 								.map((x, i) => {
-									const graph = this.props.graph["month" + i];
+									const key = `2007-${i + 1 < 10 ? "0" : ""}${i + 1}-day`;
+									const graph = this.props.graph[key];
 									const days = moment(
 										`2007-${i + 1}-01`,
 										"YYYY-M-DD"
@@ -202,7 +203,7 @@ class Graph extends Component {
 												width={width * days}
 												dataForXValue={this.dataForXValue.bind(this)}
 												x={width * day}
-												data={graph.dayGraph.dLine}
+												data={graph.dLine}
 											/>
 										: null;
 								})
@@ -211,9 +212,7 @@ class Graph extends Component {
 					</Animated.View>
 					*/
 
-const mapDispatchToProps = {
-	interaction
-};
+const mapDispatchToProps = {};
 
 const mapStateToProps = state => ({
 	graph: state.graph

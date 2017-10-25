@@ -41,6 +41,7 @@ export default (from, to) =>
 			[]
 		);
 
-export const loadDay = month => csvParse(fileLoad(month + "-day"), rowMap);
+export const loadDay = month =>
+	(console.log(month), csvParse(fileLoad(month + "-day"), rowMap));
 export const loadMonth = month => csvParse(fileLoad(month + "-month"), rowMap);
 export const loadYear = year => csvParse(fileLoad(year + "-year"), rowMap);

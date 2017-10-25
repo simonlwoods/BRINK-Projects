@@ -69,11 +69,19 @@ class Graph extends Component {
 
 			onPanResponderTerminationRequest: (evt, gestureState) => true,
 
-			onPanResponderRelease: (evt, gestureState) =>
-				this.props.interaction(false),
+			onPanResponderRelease: (evt, gestureState) => {
+				this._savedValue = evt.nativeEvent.locationX;
+				this.props.interaction(false);
+			},
 
-			onPanResponderTerminate: (evt, gestureState) =>
-				this.props.interaction(false),
+			onPanResponderTerminate: (evt, gestureState) => {
+				if (this._savedValue) {
+					this.touchCallback({
+						value: this._savedValue
+					});
+				}
+				this.props.interaction(false);
+			},
 
 			onShouldBlockNativeResponder: (evt, gestureState) => false
 		});
@@ -82,7 +90,9 @@ class Graph extends Component {
 	}
 
 	touchCallback({ value }) {
-		if (!this.props.graph["month" + this.props.month]) return;
+		let month = this.props.month + 1;
+		month = month < 10 ? "0" + month : month;
+		if (!this.props.graph["2007-" + month + "-month"]) return;
 
 		const { width } = this.props.graph.params;
 
@@ -90,21 +100,21 @@ class Graph extends Component {
 
 		const data = this.dataForXValue(x);
 
-		console.log("Touch monthly");
-		console.log(value, x);
-
 		this.props.dataTouch(data);
 	}
 
 	dataForXValue(x) {
-		const data = this.props.graph["month" + this.props.month].monthGraph.data;
+		let month = this.props.month + 1;
+		month = month < 10 ? "0" + month : month;
+		const data = this.props.graph["2007-" + month + "-month"].data;
 		return data[this._dataBisector.left(data, x)];
 	}
 
 	shouldComponentUpdate(newProps) {
 		if (!this._initialDraw) {
-			for (let i = 0; i < 12; i++) {
-				if (!newProps.graph["month" + i]) {
+			for (let i = 1; i <= 12; i++) {
+				const month = i < 10 ? "0" + i : i;
+				if (!newProps.graph["2007-" + month + "-month"]) {
 					return false;
 				}
 			}
@@ -146,20 +156,28 @@ class Graph extends Component {
 				>
 					<View style={{ width: width * 12, alignSelf: "center" }}>
 						<Svg height={height} width={width * 12}>
-							{Array.from(new Array(12), (x, i) => i)
+							{Array(12)
+								.fill(0)
 								.map((x, i) => {
-									const graph = this.props.graph["month" + i];
+									const month = i + 1 < 10 ? "0" + (i + 1) : i + 1;
+									const graph = this.props.graph["2007-" + month + "-month"];
 									return graph
 										? <BarGraph
 												key={"month" + i + "_monthbar"}
 												x={width * i}
-												data={graph.monthGraph.dBar}
+												data={graph.dBar}
 											/>
 										: null;
 								})
 								.filter(x => !!x)}
 						</Svg>
 					</View>
+				</Animated.View>
+			</View>
+		);
+	}
+}
+/*
 					<Animated.View
 						style={{
 							position: "absolute",
@@ -169,28 +187,26 @@ class Graph extends Component {
 							alignSelf: "center"
 						}}
 					>
-						<Svg height={height} width={width * 365}>
-							{Array.from(new Array(12), (x, i) => i)
+						<Svg height={height} width={width * 12}>
+							{Array(12)
+								.fill(0)
 								.map((x, i) => {
-									const graph = this.props.graph["month" + i];
+									const month = i + 1 < 10 ? "0" + i + 1 : i + 1;
+									const graph = this.props.graph["2007-" + month + "-month"];
 									return graph
 										? <LineGraph
 												key={`"month${i}_monthline`}
 												width={width}
 												dataForXValue={this.dataForXValue.bind(this)}
 												x={width * i}
-												data={graph.monthGraph.dLine}
+												data={graph.dLine}
 											/>
 										: null;
 								})
 								.filter(x => !!x)}
 						</Svg>
 					</Animated.View>
-				</Animated.View>
-			</View>
-		);
-	}
-}
+					*/
 
 const mapDispatchToProps = {
 	interaction

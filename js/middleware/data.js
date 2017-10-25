@@ -83,6 +83,7 @@ function dataYearLoad(store, next, action) {
 function dataLoadYear(store, next, action) {
 	const key = action.year;
 	action.id = key + "-year";
+	if (store.getState().graph[action.id]) return Promise.resolve();
 	const data = store.getState().data;
 	if (Object.prototype.hasOwnProperty.call(data, key)) {
 		return Promise.resolve(data[key]);
@@ -110,6 +111,7 @@ function dataLoadYear(store, next, action) {
 function dataLoadMonth(store, next, action) {
 	const key = action.month;
 	action.id = key + "-month";
+	if (store.getState().graph[action.id]) return Promise.resolve();
 	const data = store.getState().data;
 	if (Object.prototype.hasOwnProperty.call(data, key)) {
 		return Promise.resolve(data[key]);
@@ -137,6 +139,7 @@ function dataLoadMonth(store, next, action) {
 function dataLoadDay(store, next, action) {
 	const key = action.month;
 	action.id = key + "-day";
+	if (store.getState().graph[action.id]) return Promise.resolve();
 	const data = store.getState().data;
 	if (Object.prototype.hasOwnProperty.call(data, key)) {
 		return Promise.resolve(data[key]);

@@ -159,13 +159,17 @@ const draw = (store, next, action) => {
 		});
 	} else {
 		const keys = Object.keys(allData)
-			.filter(x =>
-				moment(x).isBetween(
-					moment(action.start),
-					moment(action.end),
-					null,
-					"[]"
-				)
+			.filter(
+				x =>
+					x.indexOf("day") == -1 &&
+					x.indexOf("month") == -1 &&
+					x.indexOf("year") == -1 &&
+					moment(x).isBetween(
+						moment(action.start),
+						moment(action.end),
+						null,
+						"[]"
+					)
 			)
 			.sort();
 		/*
@@ -241,14 +245,15 @@ const drawMonthGraph2 = (data, xExtent, yExtent, width, height, spacing) => {
 };
 
 const drawDayGraph2 = (data, xExtent, yExtent, width, height, spacing) => {
-	const days = moment(xExtent[1]).diff(xExtent[0], "days") + 1;
+	const days =
+		moment.unix(xExtent[1]).diff(moment.unix(xExtent[0]), "days") + 1;
 
 	const x = scaleTime().domain(xExtent).range([0, width * days]);
 	const y = scaleLinear().domain(yExtent).range([0, height]);
 
 	const processedData = data.map(d => ({
 		...d,
-		xValue: Math.round(2 * x(d.timestamp)) / 2
+		xValue: Math.round(2 * x(d.timestamp.unix())) / 2
 	}));
 
 	const dBar = bar(processedData, x, y, spacing);
@@ -265,7 +270,7 @@ const drawDay = (store, next, action) => {
 	const data = action.result;
 	const { width, height, spacing } = state.graph.params;
 
-	const xExtent = extent(data, d => d.timestamp);
+	const xExtent = extent(data, d => d.timestamp.unix());
 	const yExtent = [-65, 65];
 
 	const graph = drawDayGraph2(data, xExtent, yExtent, width, height, spacing);

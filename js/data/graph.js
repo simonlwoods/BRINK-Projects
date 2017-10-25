@@ -7,6 +7,8 @@ import { Svg } from "expo";
 
 const color = require("color-space");
 
+const pointsPerStop = 10;
+
 // Round data to nearest pixel for tidy bar charts
 const bar = (data, x, y, spacing) =>
 	area()
@@ -17,17 +19,18 @@ const bar = (data, x, y, spacing) =>
 
 const line = (data, x, y) =>
 	area().x(d => x(d.timestamp)).y0(d => y(-d.Y)).y1(d => y(d.Y))(
-		data.filter((d, i, data) => !(i % 10))
+		data.filter((d, i, data) => !(i % pointsPerStop))
 	);
-
-const pointsPerStop = 10;
 
 const opacity = scaleLinear().domain([0, 65]).range([0, 5]);
 
 export const Gradient = props =>
 	(console.log("Render gradient"), (
 		<Svg.LinearGradient id={props.id} x1="0" y1="0" x2={props.width} y2="0">
-			{Array.from(new Array(Math.ceil(props.width / 10)), (x, i) => i * 10)
+			{Array.from(
+				new Array(Math.ceil(props.width / pointsPerStop)),
+				(x, i) => i * pointsPerStop
+			)
 				.map((x, i) => {
 					const d = props.dataForXValue(x);
 					if (!d) return null;
@@ -51,15 +54,17 @@ export const Gradient = props =>
 
 export const BarGraph = props =>
 	(console.log("Render bar graph"), (
-		<Svg.Path
-			x={props.x}
-			d={props.data}
-			stroke="white"
-			fill="white"
-			strokeWidth={1}
-			strokeOpacity={props.fill ? 0 : 0.25}
-			fillOpacity={props.fill ? 0.25 : 0}
-		/>
+		<Svg.G>
+			<Svg.Path
+				x={props.x}
+				d={props.data}
+				stroke="white"
+				fill="white"
+				strokeWidth={1}
+				strokeOpacity={props.fill ? 0 : 0.25}
+				fillOpacity={props.fill ? 0.25 : 0}
+			/>
+		</Svg.G>
 	));
 
 export const LineGraph = props =>

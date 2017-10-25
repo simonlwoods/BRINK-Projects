@@ -25,7 +25,13 @@ import SplashScreen from "./components/SplashScreen";
 import Settings from "./components/Settings";
 import baseTheme from "./themes/base-theme.js";
 
-import { loadDataMonth, loadDataYear } from "./actions/data";
+import {
+	loadDataMonth,
+	loadDataYear,
+	loadDay,
+	loadMonth,
+	loadYear
+} from "./actions/data";
 import { setParams } from "./actions/graph";
 
 const moment = require("moment");
@@ -59,8 +65,8 @@ const enhancer = compose(
 	applyMiddleware(
 		hueMiddleware,
 		dataMiddleware,
-		graphMiddleware,
-		promiseMiddleware
+		promiseMiddleware,
+		graphMiddleware
 	),
 	autoRehydrate()
 );
@@ -74,36 +80,48 @@ class App extends React.Component {
 			loading: true
 		};
 
-		console.log("STATE LOADING");
-		persistStore(store, { storage: AsyncStorage, whitelist: ["none"] }, () => {
-			console.log("STATE LOADED");
-			const bridge = store.getState().bridges.current;
+		const { width } = Dimensions.get("window");
+		store.dispatch(setParams(width, 225, 3));
 
-			if (bridge.id) {
-				store.dispatch({
-					type: "HUE_AUTHENTICATE",
-					bridge: store.getState().bridges.current
-				});
-				store.dispatch({
-					type: "HUE_GET_LIGHTS",
-					bridge: store.getState().bridges.current
+		console.log("STATE LOADING");
+		persistStore(
+			store,
+			{ storage: AsyncStorage, whitelist: ["bridges"] },
+			() => {
+				console.log("STATE LOADED");
+				const bridge = store.getState().bridges.current;
+
+				if (bridge.id) {
+					store.dispatch({
+						type: "HUE_AUTHENTICATE",
+						bridge: store.getState().bridges.current
+					});
+					store.dispatch({
+						type: "HUE_GET_LIGHTS",
+						bridge: store.getState().bridges.current
+					});
+				}
+
+				co(function*() {
+					for (let i = 0; i < 12; i++) {
+						const month = i + 1;
+						yield store.dispatch(
+							loadDay("2007-" + (month < 10 ? "0" : "") + month)
+						);
+						yield store.dispatch(
+							loadMonth("2007-" + (month < 10 ? "0" : "") + month)
+						);
+						//yield store.dispatch(loadDataMonth(i));
+					}
+					yield store.dispatch(loadYear("2007"));
+					//yield store.dispatch(loadDataYear());
+				}).then(() => {
+					this.setState({
+						loading: false
+					});
 				});
 			}
-
-			const { width } = Dimensions.get("window");
-			store.dispatch(setParams(width, 225, 3));
-
-			co(function*() {
-				for (let i = 0; i < 12; i++) {
-					yield store.dispatch(loadDataMonth(i));
-				}
-				yield store.dispatch(loadDataYear());
-			}).then(() => {
-				this.setState({
-					loading: false
-				});
-			});
-		});
+		);
 	}
 	render() {
 		return (

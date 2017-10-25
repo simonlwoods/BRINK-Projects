@@ -25,7 +25,7 @@ export default function(state = initialState, action) {
 		case "GRAPH_SET_YEAR":
 			return {
 				...state,
-				[action.id]: action.result
+				[action.id]: action.graph
 			};
 		case "GRAPH_SET_YEAR_GRAPH":
 			return {

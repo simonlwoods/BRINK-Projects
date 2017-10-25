@@ -34,6 +34,15 @@ class Timeline extends Component {
 		};
 
 		this.y = scaleLinear().domain([0, 65]).range([0, height / 2]);
+
+		this.state.scaleX.addListener(({ value }) => {
+			if (this.state.showX && (value > 1.05 || value < 0.95)) {
+				this.setState({ showX: false });
+			}
+			if (!this.state.showX && (value < 1.05 && value > 0.95)) {
+				this.setState({ showX: true });
+			}
+		});
 	}
 
 	getScale() {
@@ -69,6 +78,7 @@ class Timeline extends Component {
 	dataTouch(data) {
 		if (data) {
 			this.setState({
+				showX: true,
 				x: data.xValue,
 				Y: data.Y
 			});
@@ -83,7 +93,7 @@ class Timeline extends Component {
 		const y = Math.max(1, this.y(this.state.Y));
 		return (
 			<View>
-				{this.state.x
+				{this.state.showX
 					? <View
 							style={{
 								width

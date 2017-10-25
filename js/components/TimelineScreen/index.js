@@ -20,7 +20,7 @@ import YearlyTimeline from "./../Timeline/Yearly";
 import ImageSlider from "./../Background/imageSlider";
 
 import { setLights, setSchedule } from "./../../actions/bridge";
-import { interaction, swiping, setParams } from "./../../actions/graph";
+import { setParams } from "./../../actions/graph";
 
 import pinchHandler from "./PinchHandler";
 
@@ -30,7 +30,6 @@ class TimelineScreen extends Component {
 	static propTypes = {
 		setLights: React.PropTypes.func,
 		setSchedule: React.PropTypes.func,
-		interaction: React.PropTypes.func,
 		setGraphParams: React.PropTypes.func
 	};
 
@@ -68,8 +67,8 @@ class TimelineScreen extends Component {
 			interacting: new Animated.Value(0)
 		};
 
-		this.swipe = 0;
-		this.state.swipe.addListener(({ value }) => (this.swipe = value));
+		this.swiping = false;
+		this.interacting = false;
 
 		this.imageSlide = new Animated.Value(0);
 		this.imageResponder = ImageSlider(this.imageSlide);
@@ -133,7 +132,7 @@ class TimelineScreen extends Component {
 		this.setState({ currentDate });
 
 		this.state.swipe.setValue(0);
-		this.props.swiping(false);
+		this.swiping = false;
 	}
 
 	next() {
@@ -180,14 +179,29 @@ class TimelineScreen extends Component {
 		}
 	}
 
+	gestureGrant() {
+		this._swiping = false;
+		this.resetPinch();
+		this.resetSwipe();
+	}
+
+	gestureMove(pinch, swipePosition, swipeVelocity) {
+		if (swipePosition > 50 || swipePosition < -50) this._swiping = true;
+		this.pinchMove(this._swiping ? 1 : pinch);
+		this.swipeMove(swipePosition, swipeVelocity);
+	}
+
+	gestureEnd(pinch, swipePosition, swipeVelocity) {
+		this.pinchRelease(this._swiping ? 1 : pinch);
+		this.swipeRelease(swipePosition, swipeVelocity);
+	}
+
 	resetPinch() {
-		this.props.interaction(true);
-		this.props.swiping(true);
+		this.interaction(true);
 		this.pinchMove(1);
 	}
 
 	pinchMove(value) {
-		console.log(this.state.active);
 		switch (this.state.active) {
 			case "daily":
 				this.state.dailyScale.setValue(value);
@@ -202,8 +216,7 @@ class TimelineScreen extends Component {
 	}
 
 	pinchRelease(value) {
-		this.props.interaction(false);
-		console.log(value);
+		this.interaction(false);
 		switch (this.state.active) {
 			case "daily":
 				if (value <= 0.5) {
@@ -274,11 +287,15 @@ class TimelineScreen extends Component {
 		}
 	}
 
+	resetSwipe() {
+		this.swiping = true;
+	}
+
 	swipeMove(value) {
 		this.state.swipe.setValue(value);
 	}
 
-	swipeRelease(value) {
+	swipeRelease(value, velocity) {
 		// Swipe to next day
 		if (this.canNext() && value < -(this.state.width / 3)) {
 			Animated.timing(this.state.swipe, {
@@ -293,12 +310,20 @@ class TimelineScreen extends Component {
 		} else {
 			Animated.spring(this.state.swipe, {
 				toValue: 0
-			}).start(() => this.props.swiping(false));
+			}).start(() => (this.swiping = false));
 		}
 	}
 
 	interaction(value) {
-		this.props.interaction(value);
+		this.interacting = value;
+		Animated.timing(this.state.interacting, {
+			toValue: value ? 1 : 0,
+			duration: 100
+		}).start();
+	}
+
+	isSwiping() {
+		return this.swiping;
 	}
 
 	componentWillMount() {
@@ -308,17 +333,8 @@ class TimelineScreen extends Component {
 
 		//		this.props.setGraphParams(width, height, spacing);
 
-		this.props.swiping(false);
-		this.props.interaction(false);
-	}
-
-	componentWillReceiveProps(newProps) {
-		if (newProps.graph.interaction !== this.props.graph.interaction) {
-			Animated.timing(this.state.interacting, {
-				toValue: newProps.graph.interaction ? 1 : 0,
-				duration: 100
-			}).start();
-		}
+		this.swiping = false;
+		this.interacting = false;
 	}
 
 	componentDidMount() {
@@ -364,6 +380,8 @@ class TimelineScreen extends Component {
 					dataTouch={data => this.dataTouch(data)}
 					date={this.state.currentDate}
 					interacting={this.state.interacting}
+					isSwiping={() => this.isSwiping()}
+					interaction={value => this.interaction(value)}
 				/>
 			</Animated.View>
 		);
@@ -383,6 +401,8 @@ class TimelineScreen extends Component {
 					dataTouch={data => this.dataTouch(data)}
 					date={this.state.currentDate}
 					interacting={this.state.interacting}
+					isSwiping={() => this.isSwiping()}
+					interaction={value => this.interaction(value)}
 				/>
 			</Animated.View>
 		);
@@ -402,6 +422,8 @@ class TimelineScreen extends Component {
 					dataTouch={data => this.dataTouch(data)}
 					date={this.state.currentDate}
 					interacting={this.state.interacting}
+					isSwiping={() => this.isSwiping()}
+					interaction={value => this.interaction(value)}
 				/>
 			</Animated.View>
 		);
@@ -465,8 +487,6 @@ class TimelineScreen extends Component {
 const mapDispatchToProps = {
 	setLights,
 	setSchedule,
-	interaction,
-	swiping,
 	setGraphParams: setParams
 };
 

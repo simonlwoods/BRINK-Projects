@@ -13,8 +13,6 @@ class Graph extends Component {
 	constructor(props) {
 		super(props);
 
-		console.log("Yearly graph constructor");
-
 		const touch = new Animated.Value(0);
 
 		this._initialDraw = false;
@@ -50,11 +48,17 @@ class Graph extends Component {
 
 			onPanResponderTerminationRequest: (evt, gestureState) => true,
 
-			onPanResponderRelease: (evt, gestureState) =>
-				this.props.interaction(false),
+			onPanResponderRelease: (evt, gestureState) => {
+				this._savedValue = evt.nativeEvent.locationX;
+				this.props.interaction(false);
+			},
 
-			onPanResponderTerminate: (evt, gestureState) =>
-				this.props.interaction(false),
+			onPanResponderTerminate: (evt, gestureState) => {
+				this.props.interaction(false);
+				if (this._savedValue) {
+					this.touchCallback({ value: this._savedValue });
+				}
+			},
 
 			onShouldBlockNativeResponder: (evt, gestureState) => false
 		});
@@ -63,7 +67,7 @@ class Graph extends Component {
 	}
 
 	touchCallback({ value }) {
-		if (!this.props.graph["year"]) return;
+		if (!this.props.graph["2007-year"]) return;
 
 		const { width } = this.props.graph.params;
 
@@ -73,13 +77,13 @@ class Graph extends Component {
 	}
 
 	dataForXValue(x) {
-		const data = this.props.graph["year"].data;
+		const data = this.props.graph["2007-year"].data;
 		return data[this._dataBisector.left(data, x)];
 	}
 
 	shouldComponentUpdate(newProps) {
 		if (!this._initialDraw) {
-			if (!newProps.graph["year"]) {
+			if (!newProps.graph["2007-year"]) {
 				return false;
 			} else {
 				this._initialDraw = true;
@@ -99,7 +103,10 @@ class Graph extends Component {
 
 		const { width, height, spacing } = this.props.graph.params;
 
-		const graph = this.props.graph["year"];
+		const graph = this.props.graph["2007-year"];
+		if (graph) {
+			console.log(graph.dBar);
+		}
 
 		return (
 			<View style={{ height, width, position: "relative" }}>
@@ -119,6 +126,12 @@ class Graph extends Component {
 							{graph ? <BarGraph key={"year_bar"} data={graph.dBar} /> : null}
 						</Svg>
 					</View>
+				</Animated.View>
+			</View>
+		);
+	}
+}
+/*
 					<Animated.View
 						style={{
 							position: "absolute",
@@ -139,11 +152,7 @@ class Graph extends Component {
 								: null}
 						</Svg>
 					</Animated.View>
-				</Animated.View>
-			</View>
-		);
-	}
-}
+					*/
 
 const mapDispatchToProps = {
 	interaction
