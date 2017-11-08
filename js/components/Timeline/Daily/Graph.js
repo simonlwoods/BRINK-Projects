@@ -3,10 +3,11 @@ import { Animated, PanResponder, View } from "react-native";
 import { connect } from "react-redux";
 
 import { Svg } from "expo";
+import { bisector } from "d3-array";
 
 import { BarGraph, LineGraph } from "./../../../data/graph";
 
-import { interaction } from "./../../../actions/graph";
+const moment = require("moment");
 
 class Graph extends Component {
 	constructor(props) {
@@ -22,7 +23,12 @@ class Graph extends Component {
 			props.scaleX
 		);
 
+		this._initialDraw = false;
+
+		this._dataBisector = bisector(d => d.xValue);
+
 		this.state = {
+			dayOffset: props.dayOffset,
 			touch,
 			widthValue,
 			translateX
@@ -32,12 +38,12 @@ class Graph extends Component {
 	componentWillMount() {
 		this._touchResponder = PanResponder.create({
 			onStartShouldSetPanResponder: (evt, gestureState) =>
-				gestureState.numberActiveTouches == 1,
+				!this.props.isSwiping() && gestureState.numberActiveTouches == 1,
 
 			onStartShouldSetPanResponderCapture: (evt, gestureState) => false,
 
 			onMoveShouldSetPanResponder: (evt, gestureState) =>
-				gestureState.numberActiveTouches == 1,
+				!this.props.isSwiping() && gestureState.numberActiveTouches == 1,
 
 			onMoveShouldSetPanResponderCapture: (evt, gestureState) => false,
 
@@ -54,11 +60,17 @@ class Graph extends Component {
 
 			onPanResponderTerminationRequest: (evt, gestureState) => true,
 
-			onPanResponderRelease: (evt, gestureState) =>
-				this.props.interaction(false),
+			onPanResponderRelease: (evt, gestureState) => {
+				this._savedValue = evt.nativeEvent.locationX;
+				this.props.interaction(false);
+			},
 
-			onPanResponderTerminate: (evt, gestureState) =>
-				this.props.interaction(false),
+			onPanResponderTerminate: (evt, gestureState) => {
+				this.props.interaction(false);
+				if (this._savedValue) {
+					this.touchCallback({ value: this._savedValue });
+				}
+			},
 
 			onShouldBlockNativeResponder: (evt, gestureState) => false
 		});
@@ -67,59 +79,52 @@ class Graph extends Component {
 	}
 
 	touchCallback({ value }) {
-		if (!this.props.graph["week" + this.props.week]) return;
+		const year = moment(this.props.date).year();
+		const month = moment(this.props.date).month();
+		const thisMonth = this.props.graph[year + "-" + (month + 1) + "-day"];
+		if (!thisMonth) {
+			return;
+		}
 
 		const { width } = this.props.graph.params;
 
-		const x = value - 8 * width;
+		const dayOffset =
+			moment(`${year}-${month + 1}-01`, "YYYY-M-DD").dayOfYear() - 1;
+		const x = value - width * dayOffset;
 
-		console.log("Touch daily");
-		console.log(value, x);
-
-		const data = this.props.graph["week" + this.props.week].dataForXValue(x);
+		const data = this.dataForXValue(x);
 
 		this.props.dataTouch(data);
 	}
 
+	dataForXValue(x) {
+		const year = moment(this.props.date).year();
+		const month = moment(this.props.date).month() + 1;
+		const key = `${year}-${month < 10 ? "0" : ""}${month}-day`;
+		const data = this.props.graph[key].data;
+		return data[this._dataBisector.left(data, x)];
+	}
+
 	shouldComponentUpdate(newProps) {
-		const { width, height } = this.props.graph.params;
-		const { width: newWidth, height: newHeight } = newProps.graph.params;
-
-		if (width != newWidth || height != newHeight) {
-			this.state.widthValue.setValue(width);
+		if (!this._initialDraw) {
+			for (let i = 1; i <= 12; i++) {
+				const key = `2007-${i < 10 ? "0" : ""}${i}-day`;
+				if (!newProps.graph[key]) {
+					return false;
+				}
+			}
+			this._initialDraw = true;
 			return true;
 		}
-
-		if (newProps.week !== this.props.week) {
-			return true;
-		}
-
-		const lastWeekGraph = this.props.graph["week" + (this.props.week - 1)];
-		const graph = this.props.graph["week" + this.props.week];
-		const nextWeekGraph = this.props.graph["week" + (this.props.week + 1)];
-
-		const newLastWeekGraph = newProps.graph["week" + (newProps.week - 1)];
-		const newGraph = newProps.graph["week" + newProps.week];
-		const newNextWeekGraph = newProps.graph["week" + (newProps.week + 1)];
-
-		if (!lastWeekGraph && newLastWeekGraph) {
-			return true;
-		}
-		if (!graph && newGraph) {
-			return true;
-		}
-		if (!nextWeekGraph && newNextWeekGraph) {
-			return true;
-		}
-
 		return false;
 	}
 
+	componentDidUpdate() {
+		console.log("Finished rendering daily");
+	}
+
 	render() {
-		console.log("Render graph");
-		const lastWeekGraph = this.props.graph["week" + (this.props.week - 1)];
-		const graph = this.props.graph["week" + this.props.week];
-		const nextWeekGraph = this.props.graph["week" + (this.props.week + 1)];
+		console.log("Render daily graph");
 
 		const { width, height, spacing } = this.props.graph.params;
 
@@ -127,7 +132,7 @@ class Graph extends Component {
 			<View style={{ height, width, position: "relative" }}>
 				<Animated.View
 					style={{
-						width: width * 21,
+						width: width * 365,
 						alignSelf: "center",
 						transform: [
 							{ translateX: this.state.translateX },
@@ -136,84 +141,78 @@ class Graph extends Component {
 					}}
 					{...this._touchResponder.panHandlers}
 				>
-					<Animated.View
+					<View
 						style={{
-							width: width * 21,
+							width: width * 365,
 							alignSelf: "center"
 						}}
 					>
-						<Svg height={height} width={width * 21}>
-							{lastWeekGraph
-								? <BarGraph
-										key={"week" + (this.props.week - 1) + "bar"}
-										x={0}
-										data={lastWeekGraph.dBar}
-									/>
-								: null}
-							{graph
-								? <BarGraph
-										key={"week" + this.props.week + "bar"}
-										x={7 * width}
-										data={graph.dBar}
-									/>
-								: null}
-							{nextWeekGraph
-								? <BarGraph
-										key={"week" + (this.props.week + 1) + "bar"}
-										x={14 * width}
-										data={nextWeekGraph.dBar}
-									/>
-								: null}
+						<Svg height={height} width={width * 365}>
+							{Array(12)
+								.fill(0)
+								.map((x, i) => {
+									const key = `2007-${i + 1 < 10 ? "0" : ""}${i + 1}-day`;
+									const graph = this.props.graph[key];
+									const day =
+										moment(`2007-${i + 1}-01`, "YYYY-M-DD").dayOfYear() - 1;
+
+									if (graph && graph.dBar) {
+										//console.log(graph.dBar);
+									}
+									return graph && graph.dBar
+										? <BarGraph
+												key={`month${i}_bar`}
+												x={width * day}
+												data={graph.dBar}
+											/>
+										: null;
+								})
+								.filter(x => !!x)}
 						</Svg>
-					</Animated.View>
-					<Animated.View
-						style={{
-							position: "absolute",
-							top: 0,
-							opacity: this.props.interacting,
-							width: width * 21,
-							alignSelf: "center"
-						}}
-					>
-						<Svg height={height} width={width * 21}>
-							{lastWeekGraph
-								? <LineGraph
-										key={"week" + (this.props.week - 1) + "line"}
-										width={7 * width}
-										dataForXValue={lastWeekGraph.dataForXValue}
-										x={0}
-										data={lastWeekGraph.dLine}
-									/>
-								: null}
-							{graph
-								? <LineGraph
-										key={"week" + this.props.week + "line"}
-										width={7 * width}
-										dataForXValue={graph.dataForXValue}
-										x={7 * width}
-										data={graph.dLine}
-									/>
-								: null}
-							{nextWeekGraph
-								? <LineGraph
-										key={"week" + (this.props.week + 1) + "line"}
-										width={7 * width}
-										x={14 * width}
-										dataForXValue={nextWeekGraph.dataForXValue}
-										data={nextWeekGraph.dLine}
-									/>
-								: null}
-						</Svg>
-					</Animated.View>
+					</View>
 				</Animated.View>
 			</View>
 		);
 	}
 }
+/*
+					<Animated.View
+						style={{
+							position: "absolute",
+							top: 0,
+							opacity: this.props.interacting,
+							width: width * 365,
+							alignSelf: "center"
+						}}
+					>
+						<Svg height={height} width={width * 365}>
+							{Array(12)
+								.fill(0)
+								.map((x, i) => {
+									const key = `2007-${i + 1 < 10 ? "0" : ""}${i + 1}-day`;
+									const graph = this.props.graph[key];
+									const days = moment(
+										`2007-${i + 1}-01`,
+										"YYYY-M-DD"
+									).daysInMonth();
+									const day =
+										moment(`2007-${i + 1}-01`, "YYYY-M-DD").dayOfYear() - 1;
+									return graph
+										? <LineGraph
+												key={`"month${i}_line`}
+												width={width * days}
+												dataForXValue={this.dataForXValue.bind(this)}
+												x={width * day}
+												data={graph.dLine}
+											/>
+										: null;
+								})
+								.filter(x => !!x)}
+						</Svg>
+					</Animated.View>
+					*/
 
-const mapDispatchToProps = {
-	interaction
-};
+const mapDispatchToProps = {};
 
 const mapStateToProps = state => ({
 	graph: state.graph

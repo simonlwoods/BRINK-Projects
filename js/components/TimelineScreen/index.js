@@ -13,9 +13,7 @@ import {
 } from "./../../components";
 
 import Time from "./../Time";
-import DailyTimeline from "./../Timeline/NewDaily";
-import MonthlyTimeline from "./../Timeline/Monthly";
-import YearlyTimeline from "./../Timeline/Yearly";
+import { DailyTimeline, MonthlyTimeline, YearlyTimeline } from "./../Timeline";
 
 import ImageSlider from "./../Background/imageSlider";
 

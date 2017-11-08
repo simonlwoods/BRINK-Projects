@@ -1,19 +1,5 @@
-import React, { Component } from "react";
-import { View } from "react-native";
-import { connect } from "react-redux";
+import DailyTimeline from "./Daily";
+import MonthlyTimeline from "./Monthly";
+import YearlyTimeline from "./Yearly";
 
-import Graph from "./Graph";
-
-import theme from "./../../themes/base-theme";
-
-class Timeline extends Component {
-	render() {
-		return <Graph {...this.props} />;
-	}
-}
-
-const mapDispatchToProps = {};
-
-const mapStateToProps = state => ({});
-
-export default connect(mapStateToProps, mapDispatchToProps)(Timeline);
+export { DailyTimeline, MonthlyTimeline, YearlyTimeline };
